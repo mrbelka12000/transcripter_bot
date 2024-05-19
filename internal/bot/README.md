@@ -10,3 +10,8 @@
 3. No third party library bloat; only uses standard library.
 4. Updates are each processed in their own go routine, encouraging concurrent processing, and keeping your bot responsive.
 5. Code panics are automatically recovered from and logged, avoiding unexpected downtime.
+
+## Commands
+
+ - `/find`
+ - `/ping`
