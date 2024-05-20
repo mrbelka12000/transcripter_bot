@@ -21,7 +21,10 @@ type botController struct {
 	searchService      searchService
 }
 
-func NewBotController(transcriberService transcriberService, searchService searchService) *botController {
+func NewBotController(
+	transcriberService transcriberService,
+	searchService searchService,
+) *botController {
 	return &botController{
 		transcriberService: transcriberService,
 		searchService:      searchService,

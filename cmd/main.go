@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
+
 	"transcripter_bot/internal/bot"
+	"transcripter_bot/pkg/config"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 )
@@ -12,14 +13,21 @@ import (
 func main() {
 	fmt.Println("Starting new project")
 
-	token := os.Getenv("TELEGRAM_BOT_TOKEN")
+	cfg, err := config.LoadConfig("transcripter")
+	if err != nil {
+		log.Println(err)
 
-	botClient, err := gotgbot.NewBot(token, nil)
+		return
+	}
+
+	botClient, err := gotgbot.NewBot(cfg.TelegramToken, nil)
 	if err != nil {
 		log.Printf("failed to connect to bot: %v", err)
 
 		return
 	}
+
+	_ = bot.NewFileDownloader(botClient)
 
 	// TODO: implement transcriberService, searchService
 	botController := bot.NewBotController(nil, nil)
