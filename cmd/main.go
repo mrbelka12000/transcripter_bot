@@ -29,7 +29,6 @@ func main() {
 
 	_ = bot.NewFileDownloader(botClient)
 
-	// TODO: implement transcriberService, searchService
 	botController := bot.NewBotController(nil, nil)
 
 	if err := bot.RunTelegramBot(botClient, botController); err != nil {
