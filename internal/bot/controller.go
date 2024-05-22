@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -65,10 +64,15 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	}
 
 	var response string
-	if len(matchingIDs) > 0 {
-		response = "Matching message IDs: " + fmt.Sprintf("%v", matchingIDs)
+	if len(matchingIDs) == 0 {
+		response = "No matching messages("
 	} else {
-		response = "No matching messages found."
+		_, err := b.ForwardMessages(ctx.EffectiveSender.ChatId, ctx.EffectiveSender.ChatId, matchingIDs, nil)
+		if err != nil {
+			log.Println("failed to forward messages")
+		}
+
+		return nil
 	}
 
 	_, err = ctx.EffectiveChat.SendMessage(b, response, nil)
