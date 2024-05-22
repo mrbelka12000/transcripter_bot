@@ -35,7 +35,6 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 
 	var fileID string
 
-	// TODO: do we need to consider videos ?
 	if msg.Audio != nil {
 		fileID = msg.Audio.FileId
 	} else if msg.Voice != nil {
