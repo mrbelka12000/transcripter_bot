@@ -16,14 +16,12 @@ func main() {
 	cfg, err := config.LoadConfig("transcripter")
 	if err != nil {
 		log.Println(err)
-
 		return
 	}
 
 	botClient, err := gotgbot.NewBot(cfg.TelegramToken, nil)
 	if err != nil {
 		log.Printf("failed to connect to bot: %v", err)
-
 		return
 	}
 
@@ -33,7 +31,6 @@ func main() {
 
 	if err := bot.RunTelegramBot(botClient, botController); err != nil {
 		log.Printf("failed to run the project: %v", err)
-
 		return
 	}
 }
