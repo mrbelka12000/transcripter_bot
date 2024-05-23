@@ -21,11 +21,7 @@ func RunTelegramBot(bot *gotgbot.Bot, botController *botController) error {
 
 	filter := func(msg *gotgbot.Message) bool {
 
-		if msg.Audio != nil {
-			return true
-		} else if msg.Voice != nil {
-			return true
-		} else if msg.VideoNote != nil {
+		if msg.Audio != nil || msg.Voice != nil || msg.VideoNote != nil {
 			return true
 		}
 

@@ -8,24 +8,29 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2"
 )
 
-type fileDownloader struct {
+type FileDownloader struct {
 	bot *gotgbot.Bot
+	hc  *http.Client
 }
 
-func NewFileDownloader(bot *gotgbot.Bot) *fileDownloader {
-	return &fileDownloader{bot: bot}
+func NewFileDownloader(bot *gotgbot.Bot, hc *http.Client) *FileDownloader {
+	return &FileDownloader{
+		bot: bot,
+		hc:  hc,
+	}
 }
 
-func (fd *fileDownloader) GetFileURL(fileID string) (string, error) {
+func (fd *FileDownloader) GetFileURL(fileID string) (string, error) {
 	file, err := fd.bot.GetFile(fileID, nil)
 	if err != nil {
 		return "", err
 	}
+
 	return file.URL(fd.bot, nil), nil
 }
 
-func (fd *fileDownloader) DownloadFile(fileURL string) ([]byte, error) {
-	resp, err := http.Get(fileURL)
+func (fd *FileDownloader) DownloadFile(fileURL string) ([]byte, error) {
+	resp, err := fd.hc.Get(fileURL)
 	if err != nil {
 		return nil, err
 	}

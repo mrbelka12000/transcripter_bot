@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"transcripter_bot/internal/bot"
@@ -11,7 +10,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Starting new project")
+	log.Println("Starting a project...")
 
 	cfg, err := config.LoadConfig("transcripter")
 	if err != nil {
@@ -25,8 +24,7 @@ func main() {
 		return
 	}
 
-	_ = bot.NewFileDownloader(botClient)
-
+	// TODO: implement searchService and transriberService
 	botController := bot.NewBotController(nil, nil)
 
 	if err := bot.RunTelegramBot(botClient, botController); err != nil {

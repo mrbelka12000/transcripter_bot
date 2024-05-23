@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"errors"
 	"log"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -33,19 +34,12 @@ func NewBotController(
 func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) error {
 	msg := ctx.EffectiveMessage
 
-	var fileID string
-
-	if msg.Audio != nil {
-		fileID = msg.Audio.FileId
-	} else if msg.Voice != nil {
-		fileID = msg.Voice.FileId
-	} else if msg.VideoNote != nil {
-		fileID = msg.VideoNote.FileId
-	} else {
+	fileID, err := getFileID(msg)
+	if err != nil {
 		return nil
 	}
 
-	err := c.transcriberService.TranscribeAndSave(fileID, ctx.EffectiveMessage.MessageId)
+	err = c.transcriberService.TranscribeAndSave(fileID, ctx.EffectiveMessage.MessageId)
 	if err != nil {
 		log.Println("failed to transcribe and save file:", err)
 	}
@@ -86,4 +80,20 @@ func (c *botController) ping(b *gotgbot.Bot, ctx *ext.Context) error {
 	_, err := ctx.EffectiveMessage.Reply(b, "pong", nil)
 
 	return err
+}
+
+func getFileID(msg *gotgbot.Message) (string, error) {
+	var fileID string
+
+	if msg.Audio != nil {
+		fileID = msg.Audio.FileId
+	} else if msg.Voice != nil {
+		fileID = msg.Voice.FileId
+	} else if msg.VideoNote != nil {
+		fileID = msg.VideoNote.FileId
+	} else {
+		return "", errors.New("message is not audio or video type")
+	}
+
+	return fileID, nil
 }
