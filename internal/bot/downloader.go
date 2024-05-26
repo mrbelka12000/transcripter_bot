@@ -13,7 +13,9 @@ type FileDownloader struct {
 	hc  *http.Client
 }
 
-func NewFileDownloader(bot *gotgbot.Bot, hc *http.Client) *FileDownloader {
+func NewFileDownloader(bot *gotgbot.Bot) *FileDownloader {
+	hc := &http.Client{}
+
 	return &FileDownloader{
 		bot: bot,
 		hc:  hc,
