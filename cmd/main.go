@@ -5,6 +5,7 @@ import (
 
 	"transcripter_bot/internal/bot"
 	"transcripter_bot/pkg/config"
+	"transcripter_bot/pkg/database"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 )
@@ -17,6 +18,8 @@ func main() {
 		log.Println(err)
 		return
 	}
+
+	database.Connect(*cfg)
 
 	botClient, err := gotgbot.NewBot(cfg.TelegramToken, nil)
 	if err != nil {

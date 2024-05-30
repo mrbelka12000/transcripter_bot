@@ -10,6 +10,7 @@ import (
 type Config struct {
 	TelegramToken string `envconfig:"TELEGRAM_TOKEN" required:"true"`
 	PromtPort     string `envconfig:"PROMT_PORT" required:"true"`
+	MongoDBURL    string `envconfig:"MONGODB_URL" required:"true"`
 }
 
 func LoadConfig(prefix string) (*Config, error) {
