@@ -33,7 +33,7 @@ func NewBotController(
 
 func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) error {
 	_, err := ctx.EffectiveChat.SendMessage(b, "implement me", nil)
-	if err == nil {
+	if err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
 
@@ -57,7 +57,7 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 
 	_, err := ctx.EffectiveChat.SendMessage(b, "implement me", nil)
-	if err == nil {
+	if err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
 
@@ -87,7 +87,7 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	}
 
 	_, err = ctx.EffectiveChat.SendMessage(b, response, nil)
-	if err == nil {
+	if err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
 
