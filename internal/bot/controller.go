@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -11,11 +12,11 @@ import (
 )
 
 type transcriberService interface {
-	TranscribeAndSave(string, int64) error
+	TranscribeAndSave(context.Context, string, int64) error
 }
 
 type searchService interface {
-	FindTranscriptions(string) ([]int64, error)
+	FindTranscriptions(context.Context, string) ([]int64, error)
 }
 
 type botController struct {
@@ -46,7 +47,7 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 		return fmt.Errorf("failed to get file url: %w", err)
 	}
 
-	err = c.transcriberService.TranscribeAndSave(url, ctx.EffectiveMessage.MessageId)
+	err = c.transcriberService.TranscribeAndSave(context.TODO(), url, ctx.EffectiveMessage.MessageId)
 	if err != nil {
 		log.Println("failed to transcribe and save file:", err)
 	}
@@ -56,7 +57,7 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 
 func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	query := ctx.Args()
-	matchingIDs, err := c.searchService.FindTranscriptions(strings.Join(query, " "))
+	matchingIDs, err := c.searchService.FindTranscriptions(context.TODO(), strings.Join(query, " "))
 	if err != nil {
 		log.Println("failed to find transcriptions:", err)
 

@@ -1,14 +1,17 @@
 package service
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 type repository interface {
-	GetTranscriptions(string) ([]int64, error)
-	SaveTranscriptions(string, int64) error
+	GetTranscriptions(context.Context, string) ([]int64, error)
+	SaveTranscriptions(context.Context, string, int64) error
 }
 
 type transcriber interface {
-	TranscribeAudio(string) (string, error)
+	TranscribeAudio(context.Context, string) (string, error)
 }
 
 type Service struct {
@@ -26,21 +29,21 @@ func New(
 	}
 }
 
-func (s Service) TranscribeAndSave(fileURL string, messageID int64) error {
-	text, err := s.transcriber.TranscribeAudio(fileURL)
+func (s Service) TranscribeAndSave(ctx context.Context, fileURL string, messageID int64) error {
+	text, err := s.transcriber.TranscribeAudio(ctx, fileURL)
 	if err != nil {
 		return fmt.Errorf("faield transcribe audio:%w", err)
 	}
 
-	if err := s.repository.SaveTranscriptions(text, messageID); err != nil {
+	if err := s.repository.SaveTranscriptions(ctx, text, messageID); err != nil {
 		return fmt.Errorf("failed to save text: %w", err)
 	}
 
 	return nil
 }
 
-func (s Service) FindTranscriptions(target string) ([]int64, error) {
-	messageIDs, err := s.repository.GetTranscriptions(target)
+func (s Service) FindTranscriptions(ctx context.Context, target string) ([]int64, error) {
+	messageIDs, err := s.repository.GetTranscriptions(ctx, target)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find: %w", err)
 	}
