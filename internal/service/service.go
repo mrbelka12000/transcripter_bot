@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"transcripter_bot/internal/service/decipher"
 )
 
 type repository interface {
@@ -22,11 +21,11 @@ type Service struct {
 
 func New(
 	repository repository,
-	assemblyApiKey string,
+	transcriber transcriber,
 ) Service {
 	return Service{
 		repository:  repository,
-		transcriber: decipher.NewTranscribeService(assemblyApiKey),
+		transcriber: transcriber,
 	}
 }
 

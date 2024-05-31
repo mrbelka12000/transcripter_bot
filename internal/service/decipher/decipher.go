@@ -3,6 +3,8 @@ package decipher
 import (
 	"context"
 	"transcripter_bot/pkg/assembly"
+
+	aai "github.com/AssemblyAI/assemblyai-go-sdk"
 )
 
 type TranscriberService interface {
@@ -10,12 +12,12 @@ type TranscriberService interface {
 }
 
 type ServiceImpl struct {
-	Assembly assembly.Assembly
+	Assembly *assembly.ServiceImpl
 }
 
-func NewTranscribeService(transciberApiKey string) TranscriberService {
+func NewTranscribeService(cli *aai.Client) TranscriberService {
 	return &ServiceImpl{
-		Assembly: assembly.NewAssembly(transciberApiKey),
+		Assembly: assembly.NewAssembly(cli),
 	}
 }
 

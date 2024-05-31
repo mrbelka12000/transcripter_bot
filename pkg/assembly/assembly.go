@@ -7,18 +7,13 @@ import (
 	aai "github.com/AssemblyAI/assemblyai-go-sdk"
 )
 
-type Assembly interface {
-	TranscribeFromUrl(ctx context.Context, audioUrl string) (string, error)
-	TranscribeFromBytes(ctx context.Context, info []byte) (string, error)
-}
-
 type ServiceImpl struct {
 	Client *aai.Client
 }
 
-func NewAssembly(apiKey string) Assembly {
+func NewAssembly(client *aai.Client) *ServiceImpl {
 	return &ServiceImpl{
-		Client: NewClient(apiKey),
+		Client: client,
 	}
 }
 
