@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"transcripter_bot/internal/service/decipher"
 )
 
 type repository interface {
@@ -21,11 +22,11 @@ type Service struct {
 
 func New(
 	repository repository,
-	transcriber transcriber,
+	assemblyApiKey string,
 ) Service {
 	return Service{
 		repository:  repository,
-		transcriber: transcriber,
+		transcriber: decipher.NewTranscribeService(assemblyApiKey),
 	}
 }
 
@@ -35,9 +36,11 @@ func (s Service) TranscribeAndSave(ctx context.Context, fileURL string, messageI
 		return fmt.Errorf("faield transcribe audio:%w", err)
 	}
 
-	if err := s.repository.SaveTranscriptions(ctx, text, messageID); err != nil {
-		return fmt.Errorf("failed to save text: %w", err)
-	}
+	fmt.Println(text)
+
+	// if err := s.repository.SaveTranscriptions(ctx, text, messageID); err != nil {
+	// 	return fmt.Errorf("failed to save text: %w", err)
+	// }
 
 	return nil
 }

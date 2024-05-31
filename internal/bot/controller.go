@@ -35,6 +35,8 @@ func NewBotController(
 }
 
 func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) error {
+	cont := context.Background()
+
 	msg := ctx.EffectiveMessage
 
 	fileID, err := getFileID(msg)
@@ -47,8 +49,7 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 		return fmt.Errorf("failed to get file url: %w", err)
 	}
 
-	err = c.transcriberService.TranscribeAndSave(context.TODO(), url, ctx.EffectiveMessage.MessageId)
-	if err != nil {
+	if err = c.transcriberService.TranscribeAndSave(cont, url, ctx.EffectiveMessage.MessageId); err != nil {
 		log.Println("failed to transcribe and save file:", err)
 	}
 
