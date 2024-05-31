@@ -1,34 +1,49 @@
 package main
 
 import (
-	"log"
+	"log/slog"
+	"os"
+	"os/signal"
 
 	"transcripter_bot/internal/bot"
 	"transcripter_bot/pkg/config"
+	"transcripter_bot/pkg/logger"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 )
 
 func main() {
-	log.Println("Starting a project...")
+	logger.Init(slog.NewTextHandler(os.Stdout, nil))
+
+	logger.Log.Info("starting project...")
 
 	cfg, err := config.LoadConfig("transcripter")
 	if err != nil {
-		log.Println(err)
+		logger.Log.Error("failed to load config", err)
 		return
 	}
+	logger.Log.Info("config loaded")
 
 	botClient, err := gotgbot.NewBot(cfg.TelegramToken, nil)
 	if err != nil {
-		log.Printf("failed to connect to bot: %v", err)
+		logger.Log.Error("failed to connect to bot", err)
 		return
 	}
+	defer botClient.Close(nil)
+	logger.Log.Info("telegram bot connection established")
 
 	// TODO: implement searchService and transriberService
 	botController := bot.NewBotController(nil, nil)
 
 	if err := bot.RunTelegramBot(botClient, botController); err != nil {
-		log.Printf("failed to run the project: %v", err)
+		logger.Log.Error("failed to run the project", err)
 		return
 	}
+
+	ch := make(chan os.Signal)
+	signal.Notify(ch, os.Interrupt)
+
+	<-ch
+
+	logger.Log.Info("...project is shuting down")
 }

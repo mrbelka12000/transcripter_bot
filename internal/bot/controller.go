@@ -2,7 +2,7 @@ package bot
 
 import (
 	"errors"
-	"log"
+	"fmt"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -32,6 +32,13 @@ func NewBotController(
 }
 
 func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) error {
+	_, err := ctx.EffectiveChat.SendMessage(b, "implement me", nil)
+	if err != nil {
+		return fmt.Errorf("failed to send message: %w", err)
+	}
+
+	return nil
+
 	msg := ctx.EffectiveMessage
 
 	fileID, err := getFileID(msg)
@@ -41,28 +48,39 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 
 	err = c.transcriberService.TranscribeAndSave(fileID, ctx.EffectiveMessage.MessageId)
 	if err != nil {
-		log.Println("failed to transcribe and save file:", err)
+		return fmt.Errorf("failed to transcrive and save: %w", err)
 	}
 
 	return nil
 }
 
 func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
+
+	_, err := ctx.EffectiveChat.SendMessage(b, "implement me", nil)
+	if err != nil {
+		return fmt.Errorf("failed to send message: %w", err)
+	}
+
+	return nil
+
 	query := ctx.Args()
 	matchingIDs, err := c.searchService.FindTranscriptions(query)
 	if err != nil {
-		log.Println("failed to find transcriptions:", err)
-
-		return nil
+		return fmt.Errorf("failed to find transcriptions: %w", err)
 	}
 
 	var response string
 	if len(matchingIDs) == 0 {
 		response = "No matching messages("
 	} else {
-		_, err := b.ForwardMessages(ctx.EffectiveSender.ChatId, ctx.EffectiveSender.ChatId, matchingIDs, nil)
+		_, err := b.ForwardMessages(
+			ctx.EffectiveSender.ChatId,
+			ctx.EffectiveSender.ChatId,
+			matchingIDs,
+			nil,
+		)
 		if err != nil {
-			log.Println("failed to forward messages")
+			return fmt.Errorf("failed to forward messages: %w", err)
 		}
 
 		return nil
@@ -70,7 +88,7 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 
 	_, err = ctx.EffectiveChat.SendMessage(b, response, nil)
 	if err != nil {
-		log.Println("failed to send message:", err)
+		return fmt.Errorf("failed to send message: %w", err)
 	}
 
 	return nil
