@@ -2,6 +2,7 @@ package bot
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 
@@ -40,7 +41,12 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 		return nil
 	}
 
-	err = c.transcriberService.TranscribeAndSave(fileID, ctx.EffectiveMessage.MessageId)
+	url, err := getFileURL(b, fileID)
+	if err != nil {
+		return fmt.Errorf("failed to get file url: %w", err)
+	}
+
+	err = c.transcriberService.TranscribeAndSave(url, ctx.EffectiveMessage.MessageId)
 	if err != nil {
 		log.Println("failed to transcribe and save file:", err)
 	}
@@ -97,4 +103,13 @@ func getFileID(msg *gotgbot.Message) (string, error) {
 	}
 
 	return fileID, nil
+}
+
+func getFileURL(b *gotgbot.Bot, fileID string) (string, error) {
+	file, err := b.GetFile(fileID, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get file: %w", err)
+	}
+
+	return file.URL(b, nil), nil
 }

@@ -8,45 +8,26 @@ type repository interface {
 }
 
 type transcriber interface {
-	TranscribeAudio([]byte) (string, error)
-}
-
-type downloader interface {
-	GetFileURL(fileID string) (string, error)
-	DownloadFile(fileURL string) ([]byte, error)
+	TranscribeAudio(string) (string, error)
 }
 
 type Service struct {
 	repository  repository
 	transcriber transcriber
-	downloader  downloader
 }
 
 func New(
 	repository repository,
 	transcriber transcriber,
-	downloader downloader,
 ) Service {
 	return Service{
 		repository:  repository,
 		transcriber: transcriber,
-		downloader:  downloader,
 	}
 }
 
-func (s Service) TranscribeAndSave(fileID string, messageID int64) error {
-
-	url, err := s.downloader.GetFileURL(fileID)
-	if err != nil {
-		return fmt.Errorf("faield to get file url:%w", err)
-	}
-
-	audio, err := s.downloader.DownloadFile(url)
-	if err != nil {
-		return fmt.Errorf("faield to download file:%w", err)
-	}
-
-	text, err := s.transcriber.TranscribeAudio(audio)
+func (s Service) TranscribeAndSave(fileURL string, messageID int64) error {
+	text, err := s.transcriber.TranscribeAudio(fileURL)
 	if err != nil {
 		return fmt.Errorf("faield transcribe audio:%w", err)
 	}
