@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"transcripter_bot/internal/bot"
+	"transcripter_bot/internal/decipher"
 	"transcripter_bot/internal/service"
-	"transcripter_bot/internal/service/decipher"
 	"transcripter_bot/pkg/assembly"
 	"transcripter_bot/pkg/config"
 
