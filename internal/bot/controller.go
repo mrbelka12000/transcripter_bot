@@ -32,6 +32,13 @@ func NewBotController(
 }
 
 func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) error {
+	_, err := ctx.EffectiveChat.SendMessage(b, "implement me", nil)
+	if err == nil {
+		return fmt.Errorf("failed to send message: %w", err)
+	}
+
+	return nil
+
 	msg := ctx.EffectiveMessage
 
 	fileID, err := getFileID(msg)
@@ -48,6 +55,14 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 }
 
 func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
+
+	_, err := ctx.EffectiveChat.SendMessage(b, "implement me", nil)
+	if err == nil {
+		return fmt.Errorf("failed to send message: %w", err)
+	}
+
+	return nil
+
 	query := ctx.Args()
 	matchingIDs, err := c.searchService.FindTranscriptions(query)
 	if err != nil {
