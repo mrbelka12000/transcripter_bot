@@ -35,7 +35,7 @@ func main() {
 	srv := service.New(nil, transcriber)
 
 	// TODO: implement searchService and transriberService
-	botController := bot.NewBotController(srv, nil)
+	botController := bot.NewBotController(srv)
 
 	if err := bot.RunTelegramBot(botClient, botController); err != nil {
 		log.Printf("failed to run the project: %v", err)

@@ -11,26 +11,20 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 )
 
-type transcriberService interface {
+type service interface {
 	TranscribeAndSave(context.Context, string, int64) error
-}
-
-type searchService interface {
 	FindTranscriptions(context.Context, string) ([]int64, error)
 }
 
 type botController struct {
-	transcriberService transcriberService
-	searchService      searchService
+	service service
 }
 
 func NewBotController(
-	transcriberService transcriberService,
-	searchService searchService,
+	service service,
 ) *botController {
 	return &botController{
-		transcriberService: transcriberService,
-		searchService:      searchService,
+		service: service,
 	}
 }
 
@@ -49,7 +43,7 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 		return fmt.Errorf("failed to get file url: %w", err)
 	}
 
-	if err = c.transcriberService.TranscribeAndSave(cont, url, ctx.EffectiveMessage.MessageId); err != nil {
+	if err = c.service.TranscribeAndSave(cont, url, ctx.EffectiveMessage.MessageId); err != nil {
 		log.Println("failed to transcribe and save file:", err)
 	}
 
@@ -58,7 +52,7 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 
 func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	query := ctx.Args()
-	matchingIDs, err := c.searchService.FindTranscriptions(context.TODO(), strings.Join(query, " "))
+	matchingIDs, err := c.service.FindTranscriptions(context.TODO(), strings.Join(query, " "))
 	if err != nil {
 		log.Println("failed to find transcriptions:", err)
 
