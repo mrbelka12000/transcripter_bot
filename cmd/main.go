@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	
 	log.Println("Starting a project...")
 
 	cfg, err := config.LoadConfig("transcripter")
