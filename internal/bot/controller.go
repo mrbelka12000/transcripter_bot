@@ -3,6 +3,7 @@ package bot
 import (
 	"errors"
 	"log"
+	"strings"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -13,7 +14,7 @@ type transcriberService interface {
 }
 
 type searchService interface {
-	FindTranscriptions([]string) ([]int64, error)
+	FindTranscriptions(string) ([]int64, error)
 }
 
 type botController struct {
@@ -49,7 +50,7 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 
 func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	query := ctx.Args()
-	matchingIDs, err := c.searchService.FindTranscriptions(query)
+	matchingIDs, err := c.searchService.FindTranscriptions(strings.Join(query, " "))
 	if err != nil {
 		log.Println("failed to find transcriptions:", err)
 
