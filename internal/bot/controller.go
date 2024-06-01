@@ -3,31 +3,29 @@ package bot
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 )
 
-type transcriberService interface {
+type service interface {
 	TranscribeAndSave(string, int64) error
-}
-
-type searchService interface {
 	FindTranscriptions([]string) ([]int64, error)
 }
 
 type botController struct {
-	transcriberService transcriberService
-	searchService      searchService
+	service service
+	l       *slog.Logger
 }
 
 func NewBotController(
-	transcriberService transcriberService,
-	searchService searchService,
+	service service,
+	l *slog.Logger,
 ) *botController {
 	return &botController{
-		transcriberService: transcriberService,
-		searchService:      searchService,
+		service: service,
+		l:       l,
 	}
 }
 
@@ -46,7 +44,7 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 		return nil
 	}
 
-	err = c.transcriberService.TranscribeAndSave(fileID, ctx.EffectiveMessage.MessageId)
+	err = c.service.TranscribeAndSave(fileID, ctx.EffectiveMessage.MessageId)
 	if err != nil {
 		return fmt.Errorf("failed to transcrive and save: %w", err)
 	}
@@ -64,7 +62,7 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	return nil
 
 	query := ctx.Args()
-	matchingIDs, err := c.searchService.FindTranscriptions(query)
+	matchingIDs, err := c.service.FindTranscriptions(query)
 	if err != nil {
 		return fmt.Errorf("failed to find transcriptions: %w", err)
 	}
