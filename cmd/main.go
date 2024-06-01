@@ -8,7 +8,6 @@ import (
 	"transcripter_bot/internal/service"
 	"transcripter_bot/pkg/config"
 
-	"github.com/AssemblyAI/assemblyai-go-sdk"
 	"github.com/PaulSonOfLars/gotgbot/v2"
 )
 
@@ -28,9 +27,7 @@ func main() {
 		return
 	}
 
-	assemb := assemblyai.NewClient(cfg.AssemblyKey)
-
-	transcriber := assembly.NewAssembly(assemb)
+	transcriber := assembly.NewAssembly(cfg.AssemblyKey)
 
 	service := service.New(nil, transcriber)
 

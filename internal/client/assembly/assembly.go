@@ -10,13 +10,13 @@ type assembly struct {
 	client *assemblyai.Client
 }
 
-func NewAssembly(client *assemblyai.Client) assembly {
-	return assembly{
-		client: client,
+func NewAssembly(apiKey string) *assembly {
+	return &assembly{
+		client: assemblyai.NewClient(apiKey),
 	}
 }
 
-func (s assembly) TranscribeAudio(ctx context.Context, url string) (string, error) {
+func (s *assembly) TranscribeAudio(ctx context.Context, url string) (string, error) {
 	params := assemblyai.TranscriptOptionalParams{
 		LanguageCode: "ru",
 	}
