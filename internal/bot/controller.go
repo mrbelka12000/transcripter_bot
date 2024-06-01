@@ -1,37 +1,36 @@
 package bot
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 )
 
-type transcriberService interface {
-	TranscribeAndSave(string, int64) error
-}
-
-type searchService interface {
-	FindTranscriptions([]string) ([]int64, error)
+type service interface {
+	TranscribeAndSave(context.Context, string, int64) error
+	FindTranscriptions(context.Context, string) ([]int64, error)
 }
 
 type botController struct {
-	transcriberService transcriberService
-	searchService      searchService
+	service service
 }
 
 func NewBotController(
-	transcriberService transcriberService,
-	searchService searchService,
+	service service,
 ) *botController {
 	return &botController{
-		transcriberService: transcriberService,
-		searchService:      searchService,
+		service: service,
 	}
 }
 
 func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) error {
+	cont := context.Background()
+
 	msg := ctx.EffectiveMessage
 
 	fileID, err := getFileID(msg)
@@ -39,8 +38,12 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 		return nil
 	}
 
-	err = c.transcriberService.TranscribeAndSave(fileID, ctx.EffectiveMessage.MessageId)
+	url, err := getFileURL(b, fileID)
 	if err != nil {
+		return fmt.Errorf("failed to get file url: %w", err)
+	}
+
+	if err = c.service.TranscribeAndSave(cont, url, ctx.EffectiveMessage.MessageId); err != nil {
 		log.Println("failed to transcribe and save file:", err)
 	}
 
@@ -49,7 +52,7 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 
 func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	query := ctx.Args()
-	matchingIDs, err := c.searchService.FindTranscriptions(query)
+	matchingIDs, err := c.service.FindTranscriptions(context.TODO(), strings.Join(query, " "))
 	if err != nil {
 		log.Println("failed to find transcriptions:", err)
 
@@ -96,4 +99,13 @@ func getFileID(msg *gotgbot.Message) (string, error) {
 	}
 
 	return fileID, nil
+}
+
+func getFileURL(b *gotgbot.Bot, fileID string) (string, error) {
+	file, err := b.GetFile(fileID, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get file: %w", err)
+	}
+
+	return file.URL(b, nil), nil
 }

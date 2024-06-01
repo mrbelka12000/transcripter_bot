@@ -4,12 +4,15 @@ import (
 	"log"
 
 	"transcripter_bot/internal/bot"
+	"transcripter_bot/internal/client/assembly"
+	"transcripter_bot/internal/service"
 	"transcripter_bot/pkg/config"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 )
 
 func main() {
+
 	log.Println("Starting a project...")
 
 	cfg, err := config.LoadConfig("transcripter")
@@ -24,8 +27,12 @@ func main() {
 		return
 	}
 
+	transcriber := assembly.NewAssembly(cfg.AssemblyKey)
+
+	service := service.New(nil, transcriber)
+
 	// TODO: implement searchService and transriberService
-	botController := bot.NewBotController(nil, nil)
+	botController := bot.NewBotController(service)
 
 	if err := bot.RunTelegramBot(botClient, botController); err != nil {
 		log.Printf("failed to run the project: %v", err)
