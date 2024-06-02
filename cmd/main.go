@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"transcripter_bot/internal/bot"
-	"transcripter_bot/internal/client/mock"
+	"transcripter_bot/internal/client/assembly"
 	"transcripter_bot/internal/repo"
 	"transcripter_bot/internal/service"
 	"transcripter_bot/pkg/config"
@@ -35,7 +35,7 @@ func main() {
 		return
 	}
 
-	transcriberService := mock.New()
+	transcriberService := assembly.NewAssembly(cfg.AssemblyKey)
 
 	repo := repo.New(db, cfg.CollectionName)
 
