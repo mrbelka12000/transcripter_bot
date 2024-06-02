@@ -22,12 +22,13 @@ func main() {
 		return
 	}
 
-	db, err := database.Connect(*cfg)
+	db, err := database.Connect(cfg)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 		return
 	}
 	_ = db
+
 	botClient, err := gotgbot.NewBot(cfg.TelegramToken, nil)
 	if err != nil {
 		log.Printf("failed to connect to bot: %v", err)
@@ -35,11 +36,10 @@ func main() {
 	}
 
 	transcriber := assembly.NewAssembly(cfg.AssemblyKey)
-
-	service := service.New(nil, transcriber)
+	srv := service.New(nil, transcriber)
 
 	// TODO: implement searchService and transriberService
-	botController := bot.NewBotController(service)
+	botController := bot.NewBotController(srv)
 
 	if err := bot.RunTelegramBot(botClient, botController); err != nil {
 		log.Printf("failed to run the project: %v", err)
