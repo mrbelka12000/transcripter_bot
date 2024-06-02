@@ -3,6 +3,7 @@ module transcripter_bot
 go 1.22
 
 require (
+	github.com/AssemblyAI/assemblyai-go-sdk v1.5.1
 	github.com/PaulSonOfLars/gotgbot/v2 v2.0.0-rc.27
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -10,7 +11,6 @@ require (
 )
 
 require (
-	github.com/AssemblyAI/assemblyai-go-sdk v1.5.1 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect

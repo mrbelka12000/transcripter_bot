@@ -1,10 +1,13 @@
 package service
 
-import "context"
+import (
+	"context"
+	"transcripter_bot/internal/models"
+)
 
 type repository interface {
-	GetTranscriptions(context.Context, string) ([]int64, error)
-	SaveTranscriptions(context.Context, string, int64) error
+	GetMessages(context.Context, string, int64) ([]int64, error)
+	SaveMessage(context.Context, models.Message) error
 }
 
 type transcriber interface {

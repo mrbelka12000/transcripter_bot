@@ -11,8 +11,6 @@ import (
 )
 
 func Connect(cfg config.Config) (*mongo.Database, error) {
-	dbName := "go-mongo"
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -26,5 +24,5 @@ func Connect(cfg config.Config) (*mongo.Database, error) {
 		return nil, fmt.Errorf("error pinging MongoDB: %w", err)
 	}
 
-	return client.Database(dbName), nil
+	return client.Database(cfg.DBName), nil
 }

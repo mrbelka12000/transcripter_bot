@@ -5,6 +5,7 @@ import (
 
 	"transcripter_bot/internal/bot"
 	"transcripter_bot/internal/client/assembly"
+	"transcripter_bot/internal/repo"
 	"transcripter_bot/internal/service"
 	"transcripter_bot/pkg/config"
 	"transcripter_bot/pkg/database"
@@ -13,7 +14,6 @@ import (
 )
 
 func main() {
-
 	log.Println("Starting a project...")
 
 	cfg, err := config.LoadConfig("transcripter")
@@ -27,7 +27,6 @@ func main() {
 		log.Fatalf("Error connecting to database: %v", err)
 		return
 	}
-	_ = db
 
 	botClient, err := gotgbot.NewBot(cfg.TelegramToken, nil)
 	if err != nil {
@@ -35,11 +34,10 @@ func main() {
 		return
 	}
 
-	transcriber := assembly.NewAssembly(cfg.AssemblyKey)
-	srv := service.New(nil, transcriber)
-
-	// TODO: implement searchService and transriberService
-	botController := bot.NewBotController(srv)
+	transcriberService := assembly.NewAssembly(cfg.AssemblyKey)
+	repo := repo.New(db, cfg.CollectionName)
+	service := service.New(repo, transcriberService)
+	botController := bot.NewBotController(service)
 
 	if err := bot.RunTelegramBot(botClient, botController); err != nil {
 		log.Printf("failed to run the project: %v", err)

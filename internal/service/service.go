@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"transcripter_bot/internal/models"
 )
 
 type Service struct {
@@ -20,26 +21,26 @@ func New(
 	}
 }
 
-func (s Service) TranscribeAndSave(ctx context.Context, fileURL string, messageID int64) error {
+func (s Service) TranscribeAndSave(ctx context.Context, fileURL string, message models.Message) error {
 	text, err := s.transcriber.TranscribeAudio(ctx, fileURL)
 	if err != nil {
-		return fmt.Errorf("faield transcribe audio:%w", err)
+		return fmt.Errorf("failed to transcribe audio:%w", err)
 	}
 
-	fmt.Println(text)
+	message.Text = text
 
-	// if err := s.repository.SaveTranscriptions(ctx, text, messageID); err != nil {
-	// 	return fmt.Errorf("failed to save text: %w", err)
-	// }
+	if err := s.repository.SaveMessage(ctx, message); err != nil {
+		return fmt.Errorf("failed to save text: %w", err)
+	}
 
 	return nil
 }
 
-func (s Service) FindTranscriptions(ctx context.Context, target string) ([]int64, error) {
-	messageIDs, err := s.repository.GetTranscriptions(ctx, target)
+func (s Service) FindMessages(ctx context.Context, target string, chatID int64) ([]int64, error) {
+	messages, err := s.repository.GetMessages(ctx, target, chatID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find: %w", err)
 	}
 
-	return messageIDs, err
+	return messages, err
 }
