@@ -20,6 +20,10 @@ func New(db *mongo.Database, collectionName string) *Repo {
 	return &Repo{collection}
 }
 
+type messages struct {
+	MessageID int64 `bson:"message_id"`
+}
+
 func (s Repo) GetMessages(ctx context.Context, target string, chatID int64) ([]int64, error) {
 	filter := bson.M{
 		"text": bson.M{
@@ -39,9 +43,7 @@ func (s Repo) GetMessages(ctx context.Context, target string, chatID int64) ([]i
 	}
 	defer cursor.Close(ctx)
 
-	var results []struct {
-		MessageID int64 `bson:"message_id"`
-	}
+	var results []messages
 
 	if err = cursor.All(ctx, &results); err != nil {
 		return nil, fmt.Errorf("failed to decode messages: %w", err)

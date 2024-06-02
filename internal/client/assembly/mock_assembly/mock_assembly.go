@@ -1,4 +1,4 @@
-package mock
+package mock_assembly
 
 import (
 	"context"
