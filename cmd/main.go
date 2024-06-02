@@ -7,6 +7,7 @@ import (
 	"transcripter_bot/internal/client/assembly"
 	"transcripter_bot/internal/service"
 	"transcripter_bot/pkg/config"
+	"transcripter_bot/pkg/database"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 )
@@ -21,6 +22,12 @@ func main() {
 		return
 	}
 
+	db, err := database.Connect(*cfg)
+	if err != nil {
+		log.Fatalf("Error connecting to database: %v", err)
+		return
+	}
+	_ = db
 	botClient, err := gotgbot.NewBot(cfg.TelegramToken, nil)
 	if err != nil {
 		log.Printf("failed to connect to bot: %v", err)
