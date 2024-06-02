@@ -12,7 +12,7 @@ type Config struct {
 	PromtPort     string `envconfig:"PROMT_PORT" required:"true"`
 	MongoDBURL    string `envconfig:"MONGODB_URL" required:"true"`
 	Items         string `envconfig:"ITEMS" default:"defaultCollection"`
-	AssemblyKey   string `envconfig:"ASSEMBLY_KEY" required:"false"`
+	AssemblyKey   string `envconfig:"ASSEMBLY_KEY" required:"true"`
 }
 
 func LoadConfig(prefix string) (out Config, err error) {
