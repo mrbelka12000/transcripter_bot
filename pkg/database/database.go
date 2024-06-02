@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 	"transcripter_bot/pkg/config"
 
@@ -24,8 +23,7 @@ func Connect(cfg config.Config) (*mongo.Database, error) {
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		log.Printf("Error pinging MongoDB: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("error pinging MongoDB: %w", err)
 	}
 
 	return client.Database(dbName), nil
