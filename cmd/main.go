@@ -7,12 +7,13 @@ import (
 
 	"transcripter_bot/internal/bot"
 	"transcripter_bot/pkg/config"
+	timeformat "transcripter_bot/pkg/time-format"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 )
 
 func main() {
-	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	log := slog.New(&timeformat.CustomHandler{})
 
 	log.Info("starting project...")
 
