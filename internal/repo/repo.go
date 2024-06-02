@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"transcripter_bot/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,12 +13,13 @@ import (
 
 type Repo struct {
 	collection *mongo.Collection
+	log        *slog.Logger
 }
 
-func New(db *mongo.Database, collectionName string) *Repo {
+func New(db *mongo.Database, collectionName string, log *slog.Logger) *Repo {
 	collection := db.Collection(collectionName)
 
-	return &Repo{collection}
+	return &Repo{collection, log}
 }
 
 type getMessagesResponse struct {

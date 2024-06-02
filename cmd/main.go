@@ -42,8 +42,8 @@ func main() {
 	log.Info("telegram bot connection established")
 
 	transcriberService := assembly.NewAssembly(cfg.AssemblyKey)
-	repo := repo.New(db, cfg.CollectionName)
-	service := service.New(repo, transcriberService)
+	repo := repo.New(db, cfg.CollectionName, log)
+	service := service.New(repo, transcriberService, log)
 	botController := bot.NewBotController(service, log)
 
 	if err := bot.RunTelegramBot(botClient, botController, log); err != nil {
