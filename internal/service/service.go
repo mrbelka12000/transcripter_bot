@@ -3,21 +3,25 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"transcripter_bot/internal/models"
 )
 
 type Service struct {
 	repository  repository
 	transcriber transcriber
+	log         *slog.Logger
 }
 
 func New(
 	repository repository,
 	transcriber transcriber,
+	log *slog.Logger,
 ) Service {
 	return Service{
 		repository:  repository,
 		transcriber: transcriber,
+		log:         log,
 	}
 }
 

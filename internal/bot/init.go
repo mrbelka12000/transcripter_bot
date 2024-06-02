@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -9,11 +9,10 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
 )
 
-func RunTelegramBot(bot *gotgbot.Bot, botController *botController) error {
+func RunTelegramBot(bot *gotgbot.Bot, botController *botController, log *slog.Logger) error {
 	dispatcher := ext.NewDispatcher(&ext.DispatcherOpts{
 		Error: func(b *gotgbot.Bot, ctx *ext.Context, err error) ext.DispatcherAction {
-			log.Println("an error occurred while handling update:", err.Error())
-
+			log.Error("an error occurred while handling update", err)
 			return ext.DispatcherActionNoop
 		},
 		MaxRoutines: ext.DefaultMaxRoutines,
@@ -45,8 +44,9 @@ func RunTelegramBot(bot *gotgbot.Bot, botController *botController) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("%s has been started...\n", bot.User.Username)
+	log.Info("bot has been started", "username", bot.User.Username)
 
-	updater.Idle()
+	go updater.Idle()
+
 	return nil
 }

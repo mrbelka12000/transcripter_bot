@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"transcripter_bot/internal/models"
 
@@ -19,13 +19,16 @@ type service interface {
 
 type botController struct {
 	service service
+	l       *slog.Logger
 }
 
 func NewBotController(
 	service service,
+	l *slog.Logger,
 ) *botController {
 	return &botController{
 		service: service,
+		l:       l,
 	}
 }
 
@@ -46,7 +49,7 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 	}
 
 	if err = c.service.TranscribeAndSave(context.TODO(), url, message); err != nil {
-		log.Println("failed to transcribe and save file:", err)
+		return fmt.Errorf("failed to transcribe and save: %w", err)
 	}
 
 	return nil
@@ -57,18 +60,21 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 
 	matchingIDs, err := c.service.FindMessages(context.TODO(), strings.Join(query[1:], " "), ctx.EffectiveSender.ChatId)
 	if err != nil {
-		log.Println("failed to find transcriptions:", err)
-
-		return nil
+		return fmt.Errorf("failed to find transcriptions: %w", err)
 	}
 
 	var response string
 	if len(matchingIDs) == 0 {
 		response = "No matching messages("
 	} else {
-		_, err := b.ForwardMessages(ctx.EffectiveSender.ChatId, ctx.EffectiveSender.ChatId, matchingIDs, nil)
+		_, err := b.ForwardMessages(
+			ctx.EffectiveSender.ChatId,
+			ctx.EffectiveSender.ChatId,
+			matchingIDs,
+			nil,
+		)
 		if err != nil {
-			log.Println("failed to forward messages")
+			return fmt.Errorf("failed to forward messages: %w", err)
 		}
 
 		return nil
@@ -76,7 +82,7 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 
 	_, err = ctx.EffectiveChat.SendMessage(b, response, &gotgbot.SendMessageOpts{})
 	if err != nil {
-		log.Println("failed to send message:", err)
+		return fmt.Errorf("failed to send message: %w", err)
 	}
 
 	return nil

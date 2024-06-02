@@ -1,7 +1,9 @@
 package main
 
 import (
-	"log"
+	"log/slog"
+	"os"
+	"os/signal"
 
 	"transcripter_bot/internal/bot"
 	"transcripter_bot/internal/client/assembly"
@@ -9,38 +11,50 @@ import (
 	"transcripter_bot/internal/service"
 	"transcripter_bot/pkg/config"
 	"transcripter_bot/pkg/database"
+	timeformat "transcripter_bot/pkg/time-format"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 )
 
 func main() {
-	log.Println("Starting a project...")
+	log := slog.New(&timeformat.CustomHandler{})
+
+	log.Info("starting project...")
 
 	cfg, err := config.LoadConfig("transcripter")
 	if err != nil {
-		log.Println(err)
+		log.Error("failed to load config", err)
 		return
 	}
 
 	db, err := database.Connect(cfg)
 	if err != nil {
-		log.Fatalf("Error connecting to database: %v", err)
+		log.Error("error connecting to database", err)
 		return
 	}
 
 	botClient, err := gotgbot.NewBot(cfg.TelegramToken, nil)
 	if err != nil {
-		log.Printf("failed to connect to bot: %v", err)
+		log.Error("failed to connect to bot", err)
 		return
 	}
+	defer botClient.Close(nil)
+	log.Info("telegram bot connection established")
 
 	transcriberService := assembly.NewAssembly(cfg.AssemblyKey)
-	repo := repo.New(db, cfg.CollectionName)
-	service := service.New(repo, transcriberService)
-	botController := bot.NewBotController(service)
+	repo := repo.New(db, cfg.CollectionName, log)
+	service := service.New(repo, transcriberService, log)
+	botController := bot.NewBotController(service, log)
 
-	if err := bot.RunTelegramBot(botClient, botController); err != nil {
-		log.Printf("failed to run the project: %v", err)
+	if err := bot.RunTelegramBot(botClient, botController, log); err != nil {
+		log.Error("failed to run the project", err)
 		return
 	}
+
+	ch := make(chan os.Signal)
+	signal.Notify(ch, os.Interrupt)
+
+	<-ch
+
+	log.Info("...project is shuting down")
 }
