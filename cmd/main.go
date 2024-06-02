@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"transcripter_bot/internal/bot"
@@ -19,7 +20,12 @@ func main() {
 		return
 	}
 
-	database.Connect(*cfg)
+	db, err := database.Connect(*cfg)
+	if err != nil {
+		log.Fatalf("Error connecting to database: %v", err)
+		return
+	}
+	fmt.Println(db) // db подключается к botController?
 
 	botClient, err := gotgbot.NewBot(cfg.TelegramToken, nil)
 	if err != nil {

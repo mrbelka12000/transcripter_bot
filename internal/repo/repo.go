@@ -2,58 +2,66 @@ package repo
 
 import (
 	"context"
-	"log"
+	"transcripter_bot/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type Item struct {
-	ID   string `bson:"_id,omitempty"`
-	Name string `bson:"name,omitempty"`
+type Repo struct {
+	db    *mongo.Database
+	items string
 }
 
-func Create(db *mongo.Database, item Item) (*mongo.InsertOneResult, error) {
-	collection := db.Collection("items")
-	insertResult, err := collection.InsertOne(context.TODO(), item)
+func NewRepo(db *mongo.Database, items string) *Repo {
+	return &Repo{
+		db:    db,
+		items: items,
+	}
+}
+
+func (r *Repo) Create(ctx context.Context, item models.Item) (*mongo.InsertOneResult, error) {
+	collection := r.db.Collection(r.items)
+	return collection.InsertOne(ctx, item)
+}
+
+func (r *Repo) Read(ctx context.Context, id string) (*models.Item, error) {
+	collection := r.db.Collection(r.items)
+	filter := bson.M{"_id": id}
+	var item models.Item
+	err := collection.FindOne(ctx, filter).Decode(&item)
 	if err != nil {
-		log.Print(err.Error())
 		return nil, err
 	}
-	return insertResult, nil
+	return &item, nil
 }
 
-func Read(db *mongo.Database, id string) (Item, error) {
-	collection := db.Collection("items")
-	filter := bson.M{"_id": id}
-	var result Item
-	err := collection.FindOne(context.TODO(), filter).Decode(&result)
+func (r *Repo) Search(ctx context.Context, filter bson.M) ([]*models.Item, error) {
+	collection := r.db.Collection(r.items)
+	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
-		log.Print(err.Error())
-		return Item{}, err
-	}
-	return result, nil
-}
-
-func Update(db *mongo.Database, id string, newItem Item) (*mongo.UpdateResult, error) {
-	collection := db.Collection("items")
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": newItem}
-	updateResult, err := collection.UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		log.Print(err.Error())
 		return nil, err
 	}
-	return updateResult, nil
-}
+	defer cursor.Close(ctx)
 
-func Delete(db *mongo.Database, id string) (*mongo.DeleteResult, error) {
-	collection := db.Collection("items")
-	filter := bson.M{"_id": id}
-	deleteResult, err := collection.DeleteOne(context.TODO(), filter)
-	if err != nil {
-		log.Print(err.Error())
+	var items []*models.Item
+	if err = cursor.All(ctx, &items); err != nil {
 		return nil, err
 	}
-	return deleteResult, nil
+	return items, nil
+}
+
+func (r *Repo) Update(ctx context.Context, id string, updatedItem models.Item) (*mongo.UpdateResult, error) {
+	collection := r.db.Collection(r.items)
+	filter := bson.M{"_id": id}
+	update := bson.M{
+		"$set": updatedItem,
+	}
+	return collection.UpdateOne(ctx, filter, update)
+}
+
+func (r *Repo) Delete(ctx context.Context, id string) (*mongo.DeleteResult, error) {
+	collection := r.db.Collection(r.items)
+	filter := bson.M{"_id": id}
+	return collection.DeleteOne(ctx, filter)
 }

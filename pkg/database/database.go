@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 	"transcripter_bot/pkg/config"
@@ -18,8 +19,7 @@ func Connect(cfg config.Config) (*mongo.Database, error) {
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MongoDBURL))
 	if err != nil {
-		log.Printf("Error connecting to MongoDB: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("error connecting to MongoDB: %w", err)
 	}
 
 	err = client.Ping(ctx, nil)
@@ -28,6 +28,5 @@ func Connect(cfg config.Config) (*mongo.Database, error) {
 		return nil, err
 	}
 
-	DB := client.Database(dbName)
-	return DB, nil
+	return client.Database(dbName), nil
 }
