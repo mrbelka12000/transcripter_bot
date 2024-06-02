@@ -14,7 +14,6 @@ import (
 )
 
 func main() {
-
 	log.Println("Starting a project...")
 
 	cfg, err := config.LoadConfig("transcripter")
@@ -36,11 +35,8 @@ func main() {
 	}
 
 	transcriberService := assembly.NewAssembly(cfg.AssemblyKey)
-
 	repo := repo.New(db, cfg.CollectionName)
-
 	service := service.New(repo, transcriberService)
-
 	botController := bot.NewBotController(service)
 
 	if err := bot.RunTelegramBot(botClient, botController); err != nil {
