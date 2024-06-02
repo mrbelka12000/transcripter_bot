@@ -1,17 +1,20 @@
 package bot
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
+	"transcripter_bot/internal/models"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 )
 
 type service interface {
-	TranscribeAndSave(string, int64) error
-	FindTranscriptions([]string) ([]int64, error)
+	TranscribeAndSave(context.Context, string, models.Message) error
+	FindMessages(context.Context, string, int64) ([]int64, error)
 }
 
 type botController struct {
@@ -30,39 +33,32 @@ func NewBotController(
 }
 
 func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) error {
-	_, err := ctx.EffectiveChat.SendMessage(b, "implement me", nil)
-	if err != nil {
-		return fmt.Errorf("failed to send message: %w", err)
-	}
-
-	return nil
-
-	msg := ctx.EffectiveMessage
-
-	fileID, err := getFileID(msg)
+	fileID, err := getFileID(ctx.EffectiveMessage)
 	if err != nil {
 		return nil
 	}
 
-	err = c.service.TranscribeAndSave(fileID, ctx.EffectiveMessage.MessageId)
+	url, err := getFileURL(b, fileID)
 	if err != nil {
-		return fmt.Errorf("failed to transcrive and save: %w", err)
+		return fmt.Errorf("failed to get file url: %w", err)
+	}
+
+	message := models.Message{
+		MessageID: ctx.EffectiveMessage.MessageId,
+		ChatID:    ctx.EffectiveChat.Id,
+	}
+
+	if err = c.service.TranscribeAndSave(context.TODO(), url, message); err != nil {
+		return fmt.Errorf("failed to transcribe and save: %w", err)
 	}
 
 	return nil
 }
 
 func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
-
-	_, err := ctx.EffectiveChat.SendMessage(b, "implement me", nil)
-	if err != nil {
-		return fmt.Errorf("failed to send message: %w", err)
-	}
-
-	return nil
-
 	query := ctx.Args()
-	matchingIDs, err := c.service.FindTranscriptions(query)
+
+	matchingIDs, err := c.service.FindMessages(context.TODO(), strings.Join(query[1:], " "), ctx.EffectiveSender.ChatId)
 	if err != nil {
 		return fmt.Errorf("failed to find transcriptions: %w", err)
 	}
@@ -84,7 +80,7 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 		return nil
 	}
 
-	_, err = ctx.EffectiveChat.SendMessage(b, response, nil)
+	_, err = ctx.EffectiveChat.SendMessage(b, response, &gotgbot.SendMessageOpts{})
 	if err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
@@ -112,4 +108,13 @@ func getFileID(msg *gotgbot.Message) (string, error) {
 	}
 
 	return fileID, nil
+}
+
+func getFileURL(b *gotgbot.Bot, fileID string) (string, error) {
+	file, err := b.GetFile(fileID, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get file: %w", err)
+	}
+
+	return file.URL(b, nil), nil
 }
