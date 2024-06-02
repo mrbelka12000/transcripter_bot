@@ -37,7 +37,6 @@ func RunTelegramBot(bot *gotgbot.Bot, botController *botController) error {
 	err := updater.StartPolling(bot, &ext.PollingOpts{
 		DropPendingUpdates: true,
 		GetUpdatesOpts: &gotgbot.GetUpdatesOpts{
-			Timeout: 9,
 			RequestOpts: &gotgbot.RequestOpts{
 				Timeout: time.Second * 10,
 			},

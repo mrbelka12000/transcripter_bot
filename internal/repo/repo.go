@@ -2,66 +2,63 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"transcripter_bot/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Repo struct {
-	db             *mongo.Database
-	collectionName string
+	collection *mongo.Collection
 }
 
-func NewRepo(db *mongo.Database, collectionName string) *Repo {
-	return &Repo{
-		db:             db,
-		collectionName: collectionName,
+func New(db *mongo.Database, collectionName string) *Repo {
+	collection := db.Collection(collectionName)
+
+	return &Repo{collection}
+}
+
+func (s Repo) GetMessages(ctx context.Context, target string, chatID int64) ([]int64, error) {
+	filter := bson.M{
+		"text": bson.M{
+			"$regex":   target,
+			"$options": "i",
+		},
+		"chat_id": chatID,
 	}
-}
 
-func (r *Repo) Create(ctx context.Context, item models.Item) (*mongo.InsertOneResult, error) {
-	collection := r.db.Collection(r.collectionName)
-	return collection.InsertOne(ctx, item)
-}
-
-func (r *Repo) Read(ctx context.Context, id string) (*models.Item, error) {
-	collection := r.db.Collection(r.collectionName)
-	filter := bson.M{"_id": id}
-	var item models.Item
-	err := collection.FindOne(ctx, filter).Decode(&item)
-	if err != nil {
-		return nil, err
+	projection := bson.M{
+		"message_id": 1,
 	}
-	return &item, nil
-}
 
-func (r *Repo) Search(ctx context.Context, filter bson.M) ([]*models.Item, error) {
-	collection := r.db.Collection(r.collectionName)
-	cursor, err := collection.Find(ctx, filter)
+	cursor, err := s.collection.Find(ctx, filter, options.Find().SetProjection(projection))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to find in collection: %w", err)
 	}
 	defer cursor.Close(ctx)
 
-	var items []*models.Item
-	if err = cursor.All(ctx, &items); err != nil {
-		return nil, err
+	var results []struct {
+		MessageID int64 `bson:"message_id"`
 	}
-	return items, nil
+
+	if err = cursor.All(ctx, &results); err != nil {
+		return nil, fmt.Errorf("failed to decode messages: %w", err)
+	}
+
+	matchingIDs := make([]int64, 0, len(results))
+	for _, result := range results {
+		matchingIDs = append(matchingIDs, result.MessageID)
+	}
+
+	return matchingIDs, nil
 }
 
-func (r *Repo) Update(ctx context.Context, id string, updatedItem models.Item) (*mongo.UpdateResult, error) {
-	collection := r.db.Collection(r.collectionName)
-	filter := bson.M{"_id": id}
-	update := bson.M{
-		"$set": updatedItem,
+func (s *Repo) SaveMessage(ctx context.Context, message models.Message) error {
+	if _, err := s.collection.InsertOne(ctx, message); err != nil {
+		return fmt.Errorf("failed to save message: %w", err)
 	}
-	return collection.UpdateOne(ctx, filter, update)
-}
 
-func (r *Repo) Delete(ctx context.Context, id string) (*mongo.DeleteResult, error) {
-	collection := r.db.Collection(r.collectionName)
-	filter := bson.M{"_id": id}
-	return collection.DeleteOne(ctx, filter)
+	return nil
 }

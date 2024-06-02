@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"transcripter_bot/internal/models"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 )
 
 type service interface {
-	TranscribeAndSave(context.Context, string, int64) error
-	FindTranscriptions(context.Context, string) ([]int64, error)
+	TranscribeAndSave(context.Context, string, models.Message) error
+	FindMessages(context.Context, string, int64) ([]int64, error)
 }
 
 type botController struct {
@@ -29,11 +30,7 @@ func NewBotController(
 }
 
 func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) error {
-	cont := context.Background()
-
-	msg := ctx.EffectiveMessage
-
-	fileID, err := getFileID(msg)
+	fileID, err := getFileID(ctx.EffectiveMessage)
 	if err != nil {
 		return nil
 	}
@@ -43,7 +40,12 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 		return fmt.Errorf("failed to get file url: %w", err)
 	}
 
-	if err = c.service.TranscribeAndSave(cont, url, ctx.EffectiveMessage.MessageId); err != nil {
+	message := models.Message{
+		MessageID: ctx.EffectiveMessage.MessageId,
+		ChatID:    ctx.EffectiveChat.Id,
+	}
+
+	if err = c.service.TranscribeAndSave(context.TODO(), url, message); err != nil {
 		log.Println("failed to transcribe and save file:", err)
 	}
 
@@ -52,7 +54,8 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 
 func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	query := ctx.Args()
-	matchingIDs, err := c.service.FindTranscriptions(context.TODO(), strings.Join(query, " "))
+
+	matchingIDs, err := c.service.FindMessages(context.TODO(), strings.Join(query[1:], " "), ctx.EffectiveSender.ChatId)
 	if err != nil {
 		log.Println("failed to find transcriptions:", err)
 
@@ -71,7 +74,7 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 		return nil
 	}
 
-	_, err = ctx.EffectiveChat.SendMessage(b, response, nil)
+	_, err = ctx.EffectiveChat.SendMessage(b, response, &gotgbot.SendMessageOpts{})
 	if err != nil {
 		log.Println("failed to send message:", err)
 	}
