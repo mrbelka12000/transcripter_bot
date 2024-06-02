@@ -1,0 +1,23 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Deploy to Production
+      if: github.ref == 'refs/heads/master'
+      run: echo "Deploying to production"
+
+    - name: Deploy to Test
+      if: github.ref != 'refs/heads/master'
+      run: echo "Deploying to test"
