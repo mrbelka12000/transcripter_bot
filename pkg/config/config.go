@@ -16,16 +16,15 @@ type Config struct {
 	CollectionName string `envconfig:"COLLECTION_NAME" default:"defaultCollection"`
 }
 
-func LoadConfig(prefix string) (*Config, error) {
-	cfg := &Config{}
+func LoadConfig(prefix string) (out Config, err error) {
 
 	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("failed to load env: %w", err)
+		return out, fmt.Errorf("failed to load env: %w", err)
 	}
 
-	if err := envconfig.Process(prefix, cfg); err != nil {
-		return nil, fmt.Errorf("failed to process config: %w", err)
+	if err := envconfig.Process(prefix, &out); err != nil {
+		return out, fmt.Errorf("failed to process config: %w", err)
 	}
 
-	return cfg, nil
+	return out, nil
 }
