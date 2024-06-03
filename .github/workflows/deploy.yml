@@ -23,7 +23,7 @@ jobs:
     - name: Build and push test image
       id: docker_build_test
       uses: docker/build-push-action@v2
-      if: github.ref != 'refs/heads/master'
+      if: "!contains(github.ref, 'refs/tags/releases')"
       with:
         context: .
         push: true
@@ -32,8 +32,8 @@ jobs:
     - name: Build and push prod image
       id: docker_build_prod
       uses: docker/build-push-action@v2
-      if: github.ref == 'refs/heads/master'
+      if: contains(github.ref, 'refs/tags/releases')
       with:
         context: .
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/transcripter_bot:${{ github.sha }}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/transcripter_bot:lastest
