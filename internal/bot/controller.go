@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+
 	"transcripter_bot/internal/models"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -19,16 +20,16 @@ type service interface {
 
 type botController struct {
 	service service
-	l       *slog.Logger
+	log     *slog.Logger
 }
 
 func NewBotController(
 	service service,
-	l *slog.Logger,
+	log *slog.Logger,
 ) *botController {
 	return &botController{
 		service: service,
-		l:       l,
+		log:     log,
 	}
 }
 

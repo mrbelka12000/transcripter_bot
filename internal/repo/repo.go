@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+
 	"transcripter_bot/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,7 +20,10 @@ type Repo struct {
 func New(db *mongo.Database, collectionName string, log *slog.Logger) *Repo {
 	collection := db.Collection(collectionName)
 
-	return &Repo{collection, log}
+	return &Repo{
+		collection: collection,
+		log:        log,
+	}
 }
 
 type getMessagesResponse struct {

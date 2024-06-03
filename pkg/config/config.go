@@ -18,11 +18,10 @@ type Config struct {
 
 func LoadConfig(prefix string) (out Config, err error) {
 
-	if err := godotenv.Load(); err != nil {
-		return out, fmt.Errorf("failed to load env: %w", err)
-	}
+	godotenv.Load()
 
-	if err := envconfig.Process(prefix, &out); err != nil {
+	err = envconfig.Process(prefix, &out)
+	if err != nil {
 		return out, fmt.Errorf("failed to process config: %w", err)
 	}
 
