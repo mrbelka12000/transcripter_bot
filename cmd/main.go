@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -19,7 +20,7 @@ func main() {
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	log.Info("starting project...")
-
+	fmt.Println("suka")
 	cfg, err := config.LoadConfig("transcripter")
 	if err != nil {
 		log.Error("failed to load config", "error", err)
