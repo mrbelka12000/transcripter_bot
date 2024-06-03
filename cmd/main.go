@@ -5,37 +5,36 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/PaulSonOfLars/gotgbot/v2"
+
 	"transcripter_bot/internal/bot"
 	"transcripter_bot/internal/client/assembly"
 	"transcripter_bot/internal/repo"
 	"transcripter_bot/internal/service"
 	"transcripter_bot/pkg/config"
 	"transcripter_bot/pkg/database"
-	timeformat "transcripter_bot/pkg/time-format"
-
-	"github.com/PaulSonOfLars/gotgbot/v2"
 )
 
 func main() {
-	log := slog.New(&timeformat.CustomHandler{})
+	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	log.Info("starting project...")
 
 	cfg, err := config.LoadConfig("transcripter")
 	if err != nil {
-		log.Error("failed to load config", err)
+		log.Error("failed to load config", "error", err)
 		return
 	}
 
 	db, err := database.Connect(cfg)
 	if err != nil {
-		log.Error("error connecting to database", err)
+		log.Error("error connecting to database", "error", err)
 		return
 	}
 
 	botClient, err := gotgbot.NewBot(cfg.TelegramToken, nil)
 	if err != nil {
-		log.Error("failed to connect to bot", err)
+		log.Error("failed to connect to bot", "error", err)
 		return
 	}
 	defer botClient.Close(nil)
