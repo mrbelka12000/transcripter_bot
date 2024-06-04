@@ -73,7 +73,7 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 		response = "No matching messages("
 	} else {
 		for _, id := range matchingIDs {
-			_, err = b.SendMessage(ctx.EffectiveSender.ChatId, "test", &gotgbot.SendMessageOpts{
+			_, err = b.SendMessage(ctx.EffectiveSender.ChatId, "found", &gotgbot.SendMessageOpts{
 				ReplyParameters: &gotgbot.ReplyParameters{
 					MessageId: id,
 				},
