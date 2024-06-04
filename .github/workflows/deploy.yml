@@ -2,7 +2,8 @@ name: Deploy
 on:
   push:
     tags:
-      - v1.*
+      - v[1-9]+.[0-9]+.[0-9]+
+      - release/v[1-9]+.[0-9]+.[0-9]+
 jobs:
   define:
     name: Define environment for deploy
@@ -19,10 +20,21 @@ jobs:
       service: ${{ steps.define_env.outputs.service }}
 
     steps:
+      - name: Extract branch name
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF#refs/tags/}" == *release* ]]; then
+            echo "branch=master" >> $GITHUB_OUTPUT
+          else
+            echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+          fi
+        id: extract_branch
+
       - name: Define environment
         shell: bash
         run: |
-          GITHUB_REF=${GITHUB_REF##*/}; echo ${GITHUB_REF##*/}; if [ "${GITHUB_REF##*/}" = "master" ] ;then depimage=$IMAGE; srvName=$SERVICE_NAME; else depimage=$IMAGE_TEST;srvName=$TEST_SERVICE_NAME ; fi
+          echo ${{ steps.extract_branch.outputs.branch }}
+          if [ "${{ steps.extract_branch.outputs.branch }}" = "master" ] ;then depimage=$IMAGE; srvName=$SERVICE_NAME; else depimage=$IMAGE_TEST;srvName=$TEST_SERVICE_NAME ; fi
           echo "image=$depimage" >> $GITHUB_OUTPUT
           echo "service=$srvName" >> $GITHUB_OUTPUT
         id: define_env
