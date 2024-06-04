@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      IMAGE: prod
-      IMAGE_TEST: test_test
-      SERVICE_NAME: check
-      TEST_SERVICE_NAME: test
+      IMAGE: transcripter_bot
+      IMAGE_TEST: transcripter_bot_test
+      SERVICE_NAME: transcripter_bot_service
+      TEST_SERVICE_NAME: transcripter_bot_service_test
       
     outputs:
         image: ${{ steps.define_env.outputs.image }}
