@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+
 	"transcripter_bot/internal/models"
 )
 
@@ -41,6 +42,9 @@ func (s Service) TranscribeAndSave(ctx context.Context, fileURL string, message 
 }
 
 func (s Service) FindMessages(ctx context.Context, target string, chatID int64) ([]int64, error) {
+	if target == "" {
+		return nil, fmt.Errorf("target is empty")
+	}
 	messages, err := s.repository.GetMessages(ctx, target, chatID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find: %w", err)

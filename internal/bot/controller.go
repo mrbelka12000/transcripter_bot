@@ -61,6 +61,7 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 
 	matchingIDs, err := c.service.FindMessages(context.TODO(), strings.Join(query[1:], " "), ctx.EffectiveSender.ChatId)
 	if err != nil {
+		c.log.Error("failed to find transcriptions", "error", err)
 		return fmt.Errorf("failed to find transcriptions: %w", err)
 	}
 
@@ -68,14 +69,18 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	if len(matchingIDs) == 0 {
 		response = "No matching messages("
 	} else {
-		_, err := b.ForwardMessages(
-			ctx.EffectiveSender.ChatId,
-			ctx.EffectiveSender.ChatId,
-			matchingIDs,
-			nil,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to forward messages: %w", err)
+		for _, id := range matchingIDs {
+			b.SendMessage(ctx.EffectiveSender.ChatId, "test", &gotgbot.SendMessageOpts{
+				ReplyParameters: &gotgbot.ReplyParameters{
+					MessageId:                id,
+					ChatId:                   0,
+					AllowSendingWithoutReply: false,
+					Quote:                    "",
+					QuoteParseMode:           "",
+					QuoteEntities:            nil,
+					QuotePosition:            0,
+				},
+			})
 		}
 
 		return nil
