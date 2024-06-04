@@ -2,22 +2,22 @@ name: Deploy
 on:
   push:
     tags:
-      - v1.*  
+      - v1.*
 jobs:
-   define:
+  define:
     name: Define environment for deploy
     runs-on: ubuntu-latest
-    
+
     env:
       IMAGE: transcripter_bot
       IMAGE_TEST: transcripter_bot_test
       SERVICE_NAME: transcripter_bot_service
       TEST_SERVICE_NAME: transcripter_bot_service_test
-      
+
     outputs:
-        image: ${{ steps.define_env.outputs.image }}
-        service: ${{ steps.define_env.outputs.service }}
-        
+      image: ${{ steps.define_env.outputs.image }}
+      service: ${{ steps.define_env.outputs.service }}
+
     steps:
       - name: Define environment
         shell: bash
@@ -26,32 +26,48 @@ jobs:
           echo "image=$depimage" >> $GITHUB_OUTPUT
           echo "service=$srvName" >> $GITHUB_OUTPUT
         id: define_env
-        
-   dockerSetup:
+
+  dockerSetup:
     name: Setup and build docker
     runs-on: ubuntu-latest
     needs: define
-    
+
     env:
       OWNER: mrbelka12000
-      
-    steps: 
+
+    steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
-        
+
       - name: Docker login
         run: |
           echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u $OWNER --password-stdin 
-          
+
       - name: Docker build
         run: |
           docker build -t $OWNER/${{ needs.define.outputs.image }}:latest .
-          
+
       - name: Docker push
         run: |
           docker push $OWNER/${{ needs.define.outputs.image }}:latest
-          
-   deploy:
+
+  deploy:
     name: Deploy on server
     runs-on: ubuntu-latest
     needs: [define, dockerSetup]
+    environment:
+      name: production
+      url: https://t.me/chat_transcripter_bot
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@master
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIV_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PUB_KEY }}" > ~/.ssh/id_rsa.pub
+          chmod 600 ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa.pub
+      - name: copy builds to server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USER_IP }} "docker service update --force --image mrbelka12000/${{ needs.define.outputs.image }}:latest ${{ needs.define.outputs.service }}"
