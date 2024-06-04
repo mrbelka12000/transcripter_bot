@@ -12,7 +12,7 @@ import (
 func RunTelegramBot(bot *gotgbot.Bot, botController *botController, log *slog.Logger) error {
 	dispatcher := ext.NewDispatcher(&ext.DispatcherOpts{
 		Error: func(b *gotgbot.Bot, ctx *ext.Context, err error) ext.DispatcherAction {
-			log.Error("an error occurred while handling update", err)
+			log.Error("an error occurred while handling update", "error", err)
 			return ext.DispatcherActionNoop
 		},
 		MaxRoutines: ext.DefaultMaxRoutines,

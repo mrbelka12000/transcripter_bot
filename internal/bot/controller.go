@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"transcripter_bot/internal/models"
+	srv "transcripter_bot/internal/service"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -61,6 +62,9 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 
 	matchingIDs, err := c.service.FindMessages(context.TODO(), strings.Join(query[1:], " "), ctx.EffectiveSender.ChatId)
 	if err != nil {
+		if errors.Is(err, srv.ErrEmptyTarget) {
+			b.SendMessage(ctx.EffectiveSender.ChatId, "Please specify what to find", nil)
+		}
 		return fmt.Errorf("failed to find transcriptions: %w", err)
 	}
 
@@ -68,14 +72,15 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	if len(matchingIDs) == 0 {
 		response = "No matching messages("
 	} else {
-		_, err := b.ForwardMessages(
-			ctx.EffectiveSender.ChatId,
-			ctx.EffectiveSender.ChatId,
-			matchingIDs,
-			nil,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to forward messages: %w", err)
+		for _, id := range matchingIDs {
+			_, err = b.SendMessage(ctx.EffectiveSender.ChatId, "found", &gotgbot.SendMessageOpts{
+				ReplyParameters: &gotgbot.ReplyParameters{
+					MessageId: id,
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("failed to reply to message: %w", err)
+			}
 		}
 
 		return nil

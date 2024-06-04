@@ -2,9 +2,16 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
+
 	"transcripter_bot/internal/models"
+)
+
+var (
+	ErrEmptyTarget = errors.New("empty target")
 )
 
 type Service struct {
@@ -41,10 +48,19 @@ func (s Service) TranscribeAndSave(ctx context.Context, fileURL string, message 
 }
 
 func (s Service) FindMessages(ctx context.Context, target string, chatID int64) ([]int64, error) {
+	if isEmptyTarget(target) {
+		return nil, fmt.Errorf("invalid target: %w", ErrEmptyTarget)
+	}
+
 	messages, err := s.repository.GetMessages(ctx, target, chatID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find: %w", err)
 	}
 
 	return messages, err
+}
+
+func isEmptyTarget(s string) bool {
+	s = strings.TrimSpace(s)
+	return len(s) == 0
 }
