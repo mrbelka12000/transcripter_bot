@@ -2,6 +2,7 @@ package main
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 
@@ -44,6 +45,18 @@ func main() {
 	repo := repo.New(db, cfg.CollectionName, log)
 	service := service.New(repo, transcriberService, log)
 	botController := bot.NewBotController(service, log)
+
+	go func() {
+		//health check
+		http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("ok"))
+		})
+		err := http.ListenAndServe(":"+cfg.HTTPPort, nil)
+		if err != nil {
+			log.Error("error starting http server", "error", err)
+			os.Exit(1)
+		}
+	}()
 
 	if err := bot.RunTelegramBot(botClient, botController, log); err != nil {
 		log.Error("failed to run the project", err)

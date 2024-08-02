@@ -14,6 +14,7 @@ type Config struct {
 	MongoDBURL     string `envconfig:"MONGODB_URL" required:"true"`
 	DBName         string `envconfig:"DB_NAME" default:"go-mongo"`
 	CollectionName string `envconfig:"COLLECTION_NAME" default:"defaultCollection"`
+	HTTPPort       string `envconfig:"HTTP_PORT" default:"5551"`
 }
 
 func LoadConfig(prefix string) (out Config, err error) {
