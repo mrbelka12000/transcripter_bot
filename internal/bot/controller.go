@@ -14,27 +14,37 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 )
 
-type service interface {
-	TranscribeAndSave(context.Context, string, models.Message) error
-	FindMessages(context.Context, string, int64) ([]int64, error)
-}
+type (
+	// Controller ..
+	Controller struct {
+		service service
+		log     *slog.Logger
+		name    string
+	}
 
-type botController struct {
-	service service
-	log     *slog.Logger
-}
+	service interface {
+		TranscribeAndSave(context.Context, string, models.Message) error
+		FindMessages(context.Context, string, int64) ([]int64, error)
+	}
+)
 
-func NewBotController(
+func New(
 	service service,
 	log *slog.Logger,
-) *botController {
-	return &botController{
+	name string,
+) *Controller {
+	return &Controller{
 		service: service,
 		log:     log,
+		name:    name,
 	}
 }
 
-func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) error {
+func (c *Controller) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) error {
+	if isInline(c.name, ctx.EffectiveMessage.Text) {
+		return c.findCommand(b, ctx)
+	}
+
 	fileID, err := getFileID(ctx.EffectiveMessage)
 	if err != nil {
 		return nil
@@ -57,7 +67,7 @@ func (c *botController) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) 
 	return nil
 }
 
-func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
+func (c *Controller) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	query := ctx.Args()
 
 	matchingIDs, err := c.service.FindMessages(context.TODO(), strings.Join(query[1:], " "), ctx.EffectiveSender.ChatId)
@@ -94,7 +104,7 @@ func (c *botController) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
 	return nil
 }
 
-func (c *botController) ping(b *gotgbot.Bot, ctx *ext.Context) error {
+func (c *Controller) ping(b *gotgbot.Bot, ctx *ext.Context) error {
 	_, err := ctx.EffectiveMessage.Reply(b, "pong", nil)
 
 	return err
@@ -123,4 +133,13 @@ func getFileURL(b *gotgbot.Bot, fileID string) (string, error) {
 	}
 
 	return file.URL(b, nil), nil
+}
+
+func isInline(botName, text string) bool {
+	words := strings.Split(text, " ")
+	if len(words) == 0 {
+		return false
+	}
+
+	return botName == words[0]
 }

@@ -15,6 +15,7 @@ type Config struct {
 	DBName         string `envconfig:"DB_NAME" default:"go-mongo"`
 	CollectionName string `envconfig:"COLLECTION_NAME" default:"defaultCollection"`
 	HTTPPort       string `envconfig:"HTTP_PORT" default:"5551"`
+	BotName        string `envconfig:"BOT_NAME" default:"@chat_transcripter_bot"`
 }
 
 func LoadConfig(prefix string) (out Config, err error) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -10,7 +11,7 @@ import (
 
 	"transcripter_bot/internal/bot"
 	"transcripter_bot/internal/client/assembly"
-	"transcripter_bot/internal/repo"
+	"transcripter_bot/internal/repository"
 	"transcripter_bot/internal/service"
 	"transcripter_bot/pkg/config"
 	"transcripter_bot/pkg/database"
@@ -39,19 +40,18 @@ func main() {
 		return
 	}
 	defer botClient.Close(nil)
-	log.Info("telegram bot connection established")
 
 	transcriberService := assembly.NewAssembly(cfg.AssemblyKey)
-	repo := repo.New(db, cfg.CollectionName, log)
-	service := service.New(repo, transcriberService, log)
-	botController := bot.NewBotController(service, log)
+	repo := repository.New(db, cfg.CollectionName, log)
+	svc := service.New(repo, transcriberService, log)
+	botController := bot.New(svc, log, cfg.BotName)
 
 	go func() {
 		//health check
 		http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("ok"))
 		})
-		err := http.ListenAndServe(":"+cfg.HTTPPort, nil)
+		err := http.ListenAndServe(fmt.Sprintf(":%s", cfg.HTTPPort), nil)
 		if err != nil {
 			log.Error("error starting http server", "error", err)
 			os.Exit(1)

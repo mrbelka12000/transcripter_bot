@@ -9,7 +9,7 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
 )
 
-func RunTelegramBot(bot *gotgbot.Bot, botController *botController, log *slog.Logger) error {
+func RunTelegramBot(bot *gotgbot.Bot, botController *Controller, log *slog.Logger) error {
 	dispatcher := ext.NewDispatcher(&ext.DispatcherOpts{
 		Error: func(b *gotgbot.Bot, ctx *ext.Context, err error) ext.DispatcherAction {
 			log.Error("an error occurred while handling update", "error", err)
@@ -19,7 +19,7 @@ func RunTelegramBot(bot *gotgbot.Bot, botController *botController, log *slog.Lo
 	})
 
 	filter := func(msg *gotgbot.Message) bool {
-
+		return true
 		if msg.Audio != nil || msg.Voice != nil || msg.VideoNote != nil {
 			return true
 		}
@@ -30,7 +30,7 @@ func RunTelegramBot(bot *gotgbot.Bot, botController *botController, log *slog.Lo
 	dispatcher.AddHandler(handlers.NewCommand("find", botController.findCommand))
 	dispatcher.AddHandler(handlers.NewCommand("ping", botController.ping))
 	dispatcher.AddHandler(handlers.NewMessage(filter, botController.listenToAudioAndVideo))
-
+	//dispatcher.AddHandler(handlers.NewInlineQuery(inlinequery.All, botController.findCommand))
 	updater := ext.NewUpdater(dispatcher, nil)
 
 	err := updater.StartPolling(bot, &ext.PollingOpts{
