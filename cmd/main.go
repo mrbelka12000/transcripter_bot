@@ -8,6 +8,7 @@ import (
 	"os/signal"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"transcripter_bot/internal/bot"
 	"transcripter_bot/internal/client/assembly"
@@ -51,6 +52,10 @@ func main() {
 		http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("ok"))
 		})
+
+		// metrics
+		http.Handle("/metrics", promhttp.Handler())
+
 		err := http.ListenAndServe(fmt.Sprintf(":%s", cfg.HTTPPort), nil)
 		if err != nil {
 			log.Error("error starting http server", "error", err)
