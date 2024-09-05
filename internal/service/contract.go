@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
+
 	"transcripter_bot/internal/models"
 )
 
 type repository interface {
-	GetMessages(context.Context, string, int64) ([]int64, error)
+	GetMessages(context.Context, string, string) ([]int, error)
 	SaveMessage(context.Context, models.Message) error
 }
 

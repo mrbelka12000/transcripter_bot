@@ -7,8 +7,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/yanzay/tbot/v2"
 
 	"transcripter_bot/internal/bot"
 	"transcripter_bot/internal/client/assembly"
@@ -35,17 +35,12 @@ func main() {
 		return
 	}
 
-	botClient, err := gotgbot.NewBot(cfg.TelegramToken, nil)
-	if err != nil {
-		log.Error("failed to connect to bot", "error", err)
-		return
-	}
-	defer botClient.Close(nil)
-
 	transcriberService := assembly.NewAssembly(cfg.AssemblyKey)
-	repo := repository.New(db, cfg.CollectionName, log)
+	repo := repository.New(db, cfg.TableName)
 	svc := service.New(repo, transcriberService, log)
-	botController := bot.New(svc, log, cfg.BotName)
+	telBot := tbot.New(cfg.TelegramToken)
+
+	botController := bot.New(telBot.Client(), svc, log, cfg.BotName)
 
 	go func() {
 		//health check
@@ -63,7 +58,7 @@ func main() {
 		}
 	}()
 
-	if err := bot.RunTelegramBot(botClient, botController, log); err != nil {
+	if err := bot.RunTelegramBot(telBot, botController, log); err != nil {
 		log.Error("failed to run the project", err)
 		return
 	}

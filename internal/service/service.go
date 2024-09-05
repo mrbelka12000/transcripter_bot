@@ -47,9 +47,17 @@ func (s Service) TranscribeAndSave(ctx context.Context, fileURL string, message 
 	return nil
 }
 
-func (s Service) FindMessages(ctx context.Context, target string, chatID int64) ([]int64, error) {
+func (s Service) FindMessages(ctx context.Context, target, chatID string) ([]int, error) {
 	if isEmptyTarget(target) {
 		return nil, fmt.Errorf("invalid target: %w", ErrEmptyTarget)
+	}
+
+	query := strings.Split(target, " ")
+	if len(query) < 2 {
+		return nil, fmt.Errorf("invalid target: %w", ErrEmptyTarget)
+	}
+	if query[0] == "find" {
+		target = strings.Join(query[1:], " ")
 	}
 
 	messages, err := s.repository.GetMessages(ctx, target, chatID)

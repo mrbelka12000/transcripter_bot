@@ -6,133 +6,130 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
+
+	"github.com/yanzay/tbot/v2"
 
 	"transcripter_bot/internal/models"
 	srv "transcripter_bot/internal/service"
-
-	"github.com/PaulSonOfLars/gotgbot/v2"
-	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 )
 
 type (
 	// Controller ..
 	Controller struct {
+		client  *tbot.Client
 		service service
 		log     *slog.Logger
 		name    string
 	}
 
 	service interface {
-		TranscribeAndSave(context.Context, string, models.Message) error
-		FindMessages(context.Context, string, int64) ([]int64, error)
+		TranscribeAndSave(ctx context.Context, text string, msg models.Message) error
+		FindMessages(ctx context.Context, target string, chatID string) ([]int, error)
 	}
 )
 
 func New(
+	client *tbot.Client,
 	service service,
 	log *slog.Logger,
 	name string,
 ) *Controller {
 	return &Controller{
+		client:  client,
 		service: service,
 		log:     log,
 		name:    name,
 	}
 }
 
-func (c *Controller) listenToAudioAndVideo(b *gotgbot.Bot, ctx *ext.Context) error {
-	if isInline(c.name, ctx.EffectiveMessage.Text) {
-		return c.findCommand(b, ctx)
+func (c *Controller) listenToAudioAndVideo(msg *tbot.Message) {
+	if isInline(c.name, msg.Text) {
+		c.findCommand(msg)
+		return
 	}
 
-	fileID, err := getFileID(ctx.EffectiveMessage)
+	fileID, err := getFileID(msg)
 	if err != nil {
-		return nil
+		c.log.With("error", err).Error("get file id")
+		return
 	}
 
-	url, err := getFileURL(b, fileID)
+	url, err := c.getFileURL(fileID)
 	if err != nil {
-		return fmt.Errorf("failed to get file url: %w", err)
+		c.log.With("error", err).Error("get file url")
+		return
 	}
 
-	message := models.Message{
-		MessageID: ctx.EffectiveMessage.MessageId,
-		ChatID:    ctx.EffectiveChat.Id,
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	err = c.service.TranscribeAndSave(ctx, url, models.Message{
+		MessageID: msg.MessageID,
+		ChatID:    msg.Chat.ID,
+	})
+	if err != nil {
+		c.log.With("error", err).Error("transcribe and save")
+		return
 	}
 
-	if err = c.service.TranscribeAndSave(context.TODO(), url, message); err != nil {
-		return fmt.Errorf("failed to transcribe and save: %w", err)
-	}
-
-	return nil
+	c.log.With("fileID", fileID).Info("successfully saved")
+	return
 }
 
-func (c *Controller) findCommand(b *gotgbot.Bot, ctx *ext.Context) error {
-	query := ctx.Args()
+func (c *Controller) findCommand(msg *tbot.Message) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
 
-	matchingIDs, err := c.service.FindMessages(context.TODO(), strings.Join(query[1:], " "), ctx.EffectiveSender.ChatId)
+	matchingIDs, err := c.service.FindMessages(ctx, msg.Text, msg.Chat.ID)
 	if err != nil {
 		if errors.Is(err, srv.ErrEmptyTarget) {
-			b.SendMessage(ctx.EffectiveSender.ChatId, "Please specify what to find", nil)
+			c.client.SendMessage(msg.Chat.ID, "Please specify what to find")
+			return
 		}
-		return fmt.Errorf("failed to find transcriptions: %w", err)
+
+		c.client.SendMessage(msg.Chat.ID, "Something went wrong")
+		c.log.With("error", err).Error("find messages")
+		return
 	}
 
-	var response string
 	if len(matchingIDs) == 0 {
-		response = "No matching messages("
-	} else {
-		for _, id := range matchingIDs {
-			_, err = b.SendMessage(ctx.EffectiveSender.ChatId, "found", &gotgbot.SendMessageOpts{
-				ReplyParameters: &gotgbot.ReplyParameters{
-					MessageId: id,
-				},
-			})
-			if err != nil {
-				return fmt.Errorf("failed to reply to message: %w", err)
-			}
-		}
-
-		return nil
+		c.client.SendMessage(msg.Chat.ID, "No matching messages(")
+		return
 	}
 
-	_, err = ctx.EffectiveChat.SendMessage(b, response, &gotgbot.SendMessageOpts{})
+	for _, id := range matchingIDs {
+		c.client.SendMessage(msg.Chat.ID, "Found", tbot.OptReplyToMessageID(id))
+	}
+}
+
+func (c *Controller) ping(msg *tbot.Message) {
+	c.client.SendMessage(msg.Chat.ID, "pong")
+}
+
+func (c *Controller) getFileURL(fileID string) (string, error) {
+	file, err := c.client.GetFile(fileID)
 	if err != nil {
-		return fmt.Errorf("failed to send message: %w", err)
+		return "", fmt.Errorf("can't get file: %w", err)
 	}
 
-	return nil
+	return c.client.FileURL(file), nil
 }
 
-func (c *Controller) ping(b *gotgbot.Bot, ctx *ext.Context) error {
-	_, err := ctx.EffectiveMessage.Reply(b, "pong", nil)
-
-	return err
-}
-
-func getFileID(msg *gotgbot.Message) (string, error) {
+func getFileID(msg *tbot.Message) (string, error) {
 	var fileID string
 
 	if msg.Audio != nil {
-		fileID = msg.Audio.FileId
+		fileID = msg.Audio.FileID
 	} else if msg.Voice != nil {
-		fileID = msg.Voice.FileId
+		fileID = msg.Voice.FileID
 	} else if msg.VideoNote != nil {
-		fileID = msg.VideoNote.FileId
+		fileID = msg.VideoNote.FileID
 	} else {
 		return "", errors.New("message is not audio or video type")
 	}
 
 	return fileID, nil
-}
-
-func getFileURL(b *gotgbot.Bot, fileID string) (string, error) {
-	file, err := b.GetFile(fileID, nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to get file: %w", err)
-	}
-
-	return file.URL(b, nil), nil
 }
 
 func isInline(botName, text string) bool {

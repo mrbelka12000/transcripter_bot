@@ -1,28 +1,25 @@
 package database
 
 import (
-	"context"
+	"database/sql"
 	"fmt"
-	"time"
-	"transcripter_bot/pkg/config"
 
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	_ "github.com/lib/pq"
+
+	"transcripter_bot/pkg/config"
 )
 
-func Connect(cfg config.Config) (*mongo.Database, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MongoDBURL))
+// Connect ..
+func Connect(cfg config.Config) (*sql.DB, error) {
+	db, err := sql.Open("postgres", cfg.PGURL)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to MongoDB: %w", err)
+		return nil, fmt.Errorf("open: %w", err)
 	}
 
-	err = client.Ping(ctx, nil)
+	err = db.Ping()
 	if err != nil {
-		return nil, fmt.Errorf("error pinging MongoDB: %w", err)
+		return nil, fmt.Errorf("ping: %w", err)
 	}
 
-	return client.Database(cfg.DBName), nil
+	return db, nil
 }
