@@ -18,17 +18,20 @@ type Service struct {
 	repository  repository
 	transcriber transcriber
 	log         *slog.Logger
+	botName     string
 }
 
 func New(
 	repository repository,
 	transcriber transcriber,
 	log *slog.Logger,
+	botName string,
 ) Service {
 	return Service{
 		repository:  repository,
 		transcriber: transcriber,
 		log:         log,
+		botName:     botName,
 	}
 }
 
@@ -56,7 +59,7 @@ func (s Service) FindMessages(ctx context.Context, target, chatID string) ([]int
 	if len(query) < 2 {
 		return nil, fmt.Errorf("invalid target: %w", ErrEmptyTarget)
 	}
-	if query[0] == "find" {
+	if query[0] == "/find" || query[0] == s.botName {
 		target = strings.Join(query[1:], " ")
 	}
 

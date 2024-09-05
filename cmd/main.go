@@ -37,9 +37,8 @@ func main() {
 
 	transcriberService := assembly.NewAssembly(cfg.AssemblyKey)
 	repo := repository.New(db, cfg.TableName)
-	svc := service.New(repo, transcriberService, log)
+	svc := service.New(repo, transcriberService, log, cfg.BotName)
 	telBot := tbot.New(cfg.TelegramToken)
-
 	botController := bot.New(telBot.Client(), svc, log, cfg.BotName)
 
 	go func() {
