@@ -10,6 +10,7 @@ import (
 
 	"github.com/yanzay/tbot/v2"
 
+	"transcripter_bot/internal/client/telegram"
 	"transcripter_bot/internal/models"
 	srv "transcripter_bot/internal/service"
 )
@@ -17,29 +18,36 @@ import (
 type (
 	// Controller ..
 	Controller struct {
-		client  *tbot.Client
-		service service
-		log     *slog.Logger
-		name    string
+		client   *tbot.Client
+		service  service
+		reaction reaction
+		log      *slog.Logger
+		name     string
 	}
 
 	service interface {
 		TranscribeAndSave(ctx context.Context, text string, msg models.Message) error
 		FindMessages(ctx context.Context, target string, chatID string) ([]int, error)
 	}
+
+	reaction interface {
+		SetReaction(ctx context.Context, reaction telegram.MessageData) error
+	}
 )
 
 func New(
 	client *tbot.Client,
 	service service,
+	reaction reaction,
 	log *slog.Logger,
 	name string,
 ) *Controller {
 	return &Controller{
-		client:  client,
-		service: service,
-		log:     log,
-		name:    name,
+		client:   client,
+		service:  service,
+		reaction: reaction,
+		log:      log,
+		name:     name,
 	}
 }
 
@@ -61,8 +69,7 @@ func (c *Controller) listenToAudioAndVideo(msg *tbot.Message) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
+	ctx := context.Background()
 
 	err = c.service.TranscribeAndSave(ctx, url, models.Message{
 		MessageID: msg.MessageID,
@@ -73,8 +80,16 @@ func (c *Controller) listenToAudioAndVideo(msg *tbot.Message) {
 		return
 	}
 
+	err = c.reaction.SetReaction(ctx, telegram.MessageData{
+		ChatID:    msg.Chat.ID,
+		MessageID: msg.MessageID,
+	})
+	if err != nil {
+		c.log.With("error", err).Error("set reaction")
+		return
+	}
+
 	c.log.With("fileID", fileID).Info("successfully saved")
-	return
 }
 
 func (c *Controller) findCommand(msg *tbot.Message) {

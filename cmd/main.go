@@ -12,6 +12,7 @@ import (
 
 	"transcripter_bot/internal/bot"
 	"transcripter_bot/internal/client/assembly"
+	"transcripter_bot/internal/client/telegram"
 	"transcripter_bot/internal/repository"
 	"transcripter_bot/internal/service"
 	"transcripter_bot/pkg/config"
@@ -39,7 +40,7 @@ func main() {
 	repo := repository.New(db, cfg.TableName)
 	svc := service.New(repo, transcriberService, log, cfg.BotName)
 	telBot := tbot.New(cfg.TelegramToken)
-	botController := bot.New(telBot.Client(), svc, log, cfg.BotName)
+	botController := bot.New(telBot.Client(), svc, telegram.NewClient(cfg.TelegramToken), log, cfg.BotName)
 
 	go func() {
 		//health check
