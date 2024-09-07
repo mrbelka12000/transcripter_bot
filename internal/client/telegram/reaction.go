@@ -1,11 +1,12 @@
 package telegram
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 )
 
 type (
@@ -13,49 +14,39 @@ type (
 		ChatID    string `json:"chat_id"`
 		MessageID int    `json:"message_id"`
 	}
-)
 
-type (
-	apiReq struct {
-		MessageId int        `json:"message_id"`
-		ChatId    string     `json:"chat_id"`
-		Reaction  []reaction `json:"reaction"`
-	}
 	reaction struct {
 		Type  string `json:"type"`
 		Emoji string `json:"emoji"`
 	}
 )
 
-func (c *Client) SetReaction(ctx context.Context, data MessageData) error {
-	apiReq := apiReq{
-		MessageId: data.MessageID,
-		ChatId:    data.ChatID,
-		Reaction: []reaction{
-			{
-				Type:  "emoji",
-				Emoji: reactionNoted,
-			},
-		},
+func (c *Client) SetReaction(data MessageData, emojis ...string) error {
+	if len(emojis) == 0 {
+		return errors.New("no emojis provided")
 	}
 
-	url := fmt.Sprintf(c.url, eventSetReaction)
+	var reactions []reaction
+	for _, emoji := range emojis {
+		reactions = append(reactions, reaction{
+			Type:  "emoji",
+			Emoji: emoji,
+		})
+	}
 
-	jsonData, err := json.Marshal(apiReq)
+	reactionsData, _ := json.Marshal(reactions)
+	req := url.Values{}
+	req.Set("chat_id", data.ChatID)
+	req.Set("message_id", fmt.Sprint(data.MessageID))
+	req.Set("is_big", strconv.FormatBool(false))
+	req.Set("reaction", string(reactionsData))
+
+	setReactionURL := fmt.Sprintf(c.url, eventSetReaction)
+	resp, err := http.PostForm(setReactionURL, req)
 	if err != nil {
-		return fmt.Errorf("failed to marshal reaction: %w", err)
+		return err
 	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.hc.Do(req)
-	if err != nil {
-		return fmt.Errorf("send request: %w", err)
-	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("invalid status code: %d", resp.StatusCode)

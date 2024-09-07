@@ -41,6 +41,10 @@ func (s Service) TranscribeAndSave(ctx context.Context, fileURL string, message 
 		return fmt.Errorf("failed to transcribe audio:%w", err)
 	}
 
+	if text == "" {
+		return fmt.Errorf("empty audio text")
+	}
+
 	message.Text = text
 
 	if err := s.repository.SaveMessage(ctx, message); err != nil {

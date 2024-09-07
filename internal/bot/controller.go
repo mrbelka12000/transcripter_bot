@@ -31,7 +31,7 @@ type (
 	}
 
 	reaction interface {
-		SetReaction(ctx context.Context, reaction telegram.MessageData) error
+		SetReaction(reaction telegram.MessageData, emojis ...string) error
 	}
 )
 
@@ -80,10 +80,10 @@ func (c *Controller) listenToAudioAndVideo(msg *tbot.Message) {
 		return
 	}
 
-	err = c.reaction.SetReaction(ctx, telegram.MessageData{
+	err = c.reaction.SetReaction(telegram.MessageData{
 		ChatID:    msg.Chat.ID,
 		MessageID: msg.MessageID,
-	})
+	}, "✍")
 	if err != nil {
 		c.log.With("error", err).Error("set reaction")
 		return
