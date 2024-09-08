@@ -8,6 +8,7 @@ import (
 
 func RunTelegramBot(bot *tbot.Server, botController *Controller, log *slog.Logger) error {
 
+	bot.HandleMessage("/text", botController.textCommand)
 	bot.HandleMessage("/ping", botController.ping)
 	bot.HandleMessage("/find", botController.findCommand)
 	bot.HandleMessage(".*", botController.listenToAudioAndVideo)

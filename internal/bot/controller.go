@@ -28,6 +28,7 @@ type (
 	service interface {
 		TranscribeAndSave(ctx context.Context, text string, msg models.Message) error
 		FindMessages(ctx context.Context, target string, chatID string) ([]int, error)
+		GetMessageByMessageID(ctx context.Context, messageID int) (models.Message, error)
 	}
 
 	reaction interface {
@@ -57,9 +58,8 @@ func (c *Controller) listenToAudioAndVideo(msg *tbot.Message) {
 		return
 	}
 
-	fileID, err := getFileID(msg)
-	if err != nil {
-		c.log.With("error", err).Error("get file id")
+	fileID := getFileID(msg)
+	if fileID == "" {
 		return
 	}
 
@@ -118,6 +118,21 @@ func (c *Controller) findCommand(msg *tbot.Message) {
 	}
 }
 
+func (c *Controller) textCommand(msg *tbot.Message) {
+	if msg.ReplyToMessage == nil {
+		c.log.Debug("no reply in text command")
+		return
+	}
+
+	message, err := c.service.GetMessageByMessageID(context.Background(), msg.ReplyToMessage.MessageID)
+	if err != nil {
+		c.log.With("error", err).Error("get reply to message")
+		return
+	}
+
+	c.client.SendMessage(msg.Chat.ID, message.Text, tbot.OptReplyToMessageID(msg.ReplyToMessage.MessageID))
+}
+
 func (c *Controller) ping(msg *tbot.Message) {
 	c.client.SendMessage(msg.Chat.ID, "pong")
 }
@@ -131,20 +146,19 @@ func (c *Controller) getFileURL(fileID string) (string, error) {
 	return c.client.FileURL(file), nil
 }
 
-func getFileID(msg *tbot.Message) (string, error) {
-	var fileID string
-
-	if msg.Audio != nil {
-		fileID = msg.Audio.FileID
-	} else if msg.Voice != nil {
-		fileID = msg.Voice.FileID
-	} else if msg.VideoNote != nil {
-		fileID = msg.VideoNote.FileID
-	} else {
-		return "", errors.New("message is not audio or video type")
+func getFileID(msg *tbot.Message) string {
+	switch {
+	case msg.Audio != nil:
+		return msg.Audio.FileID
+	case msg.Voice != nil:
+		return msg.Voice.FileID
+	case msg.Video != nil:
+		return msg.Video.FileID
+	case msg.VideoNote != nil:
+		return msg.VideoNote.FileID
+	default:
+		return ""
 	}
-
-	return fileID, nil
 }
 
 func isInline(botName, text string) bool {

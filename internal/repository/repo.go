@@ -22,7 +22,7 @@ func New(db *sql.DB, tableName string) *Repo {
 	}
 }
 
-func (r *Repo) GetMessages(ctx context.Context, toSearch, chatID string) ([]int, error) {
+func (r *Repo) GetMessagesForFind(ctx context.Context, toSearch, chatID string) ([]int, error) {
 	query := fmt.Sprintf(`
 SELECT message_id
 FROM %s
@@ -68,43 +68,23 @@ func (r *Repo) SaveMessage(ctx context.Context, message models.Message) error {
 	return nil
 }
 
-//func (s Repo) GetMessages(ctx context.Context, target string, chatID int64) ([]int64, error) {
-//	filter := bson.M{
-//		"text": bson.M{
-//			"$regex":   target,
-//			"$options": "i",
-//		},
-//		"chat_id": chatID,
-//	}
-//
-//	projection := bson.M{
-//		"message_id": 1,
-//	}
-//
-//	cursor, err := s.collection.Find(ctx, filter, options.Find().SetProjection(projection))
-//	if err != nil {
-//		return nil, fmt.Errorf("failed to find in collection: %w", err)
-//	}
-//	defer cursor.Close(ctx)
-//
-//	var results []getMessagesResponse
-//
-//	if err = cursor.All(ctx, &results); err != nil {
-//		return nil, fmt.Errorf("failed to decode messages: %w", err)
-//	}
-//
-//	matchingIDs := make([]int64, 0, len(results))
-//	for _, result := range results {
-//		matchingIDs = append(matchingIDs, result.MessageID)
-//	}
-//
-//	return matchingIDs, nil
-//}
-//
-//func (s *Repo) SaveMessage(ctx context.Context, message models.Message) error {
-//	if _, err := s.collection.InsertOne(ctx, message); err != nil {
-//		return fmt.Errorf("failed to save message: %w", err)
-//	}
-//
-//	return nil
-//}
+func (r *Repo) GetMessageByMessageID(ctx context.Context, messageID int) (empty models.Message, err error) {
+	query := fmt.Sprintf(`
+	SELECT id, chat_id, message_id, text
+	FROM %s
+	WHERE message_id = $1
+`, r.tableName)
+
+	row := r.db.QueryRowContext(ctx, query, messageID)
+	var msg models.Message
+
+	if err = row.Scan(&msg.ID, &msg.ChatID, &msg.MessageID, &msg.Text); err != nil {
+		return empty, fmt.Errorf("query get message: %w", err)
+	}
+
+	if err = row.Err(); err != nil {
+		return empty, fmt.Errorf("invalid row: %w", err)
+	}
+
+	return msg, nil
+}

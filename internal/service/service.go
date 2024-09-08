@@ -35,6 +35,7 @@ func New(
 	}
 }
 
+// TranscribeAndSave ..
 func (s Service) TranscribeAndSave(ctx context.Context, fileURL string, message models.Message) error {
 	text, err := s.transcriber.TranscribeAudio(ctx, fileURL)
 	if err != nil {
@@ -54,6 +55,7 @@ func (s Service) TranscribeAndSave(ctx context.Context, fileURL string, message 
 	return nil
 }
 
+// FindMessages ..
 func (s Service) FindMessages(ctx context.Context, target, chatID string) ([]int, error) {
 	if isEmptyTarget(target) {
 		return nil, fmt.Errorf("invalid target: %w", ErrEmptyTarget)
@@ -67,12 +69,17 @@ func (s Service) FindMessages(ctx context.Context, target, chatID string) ([]int
 		target = strings.Join(query[1:], " ")
 	}
 
-	messages, err := s.repository.GetMessages(ctx, target, chatID)
+	messages, err := s.repository.GetMessagesForFind(ctx, target, chatID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find: %w", err)
 	}
 
 	return messages, err
+}
+
+// GetMessageByMessageID ..
+func (s Service) GetMessageByMessageID(ctx context.Context, messageID int) (models.Message, error) {
+	return s.repository.GetMessageByMessageID(ctx, messageID)
 }
 
 func isEmptyTarget(s string) bool {

@@ -7,8 +7,9 @@ import (
 )
 
 type repository interface {
-	GetMessages(context.Context, string, string) ([]int, error)
-	SaveMessage(context.Context, models.Message) error
+	GetMessagesForFind(ctx context.Context, target string, chatID string) ([]int, error)
+	SaveMessage(ctx context.Context, msg models.Message) error
+	GetMessageByMessageID(ctx context.Context, messageID int) (models.Message, error)
 }
 
 type transcriber interface {
