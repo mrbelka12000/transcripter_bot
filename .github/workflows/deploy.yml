@@ -12,8 +12,8 @@ jobs:
     env:
       IMAGE: transcripter_bot
       IMAGE_TEST: transcripter_bot_test
-      SERVICE_NAME: transcripter_bot_service
-      TEST_SERVICE_NAME: transcripter_bot_service_test
+      SERVICE_NAME: transcripter_bot
+      TEST_SERVICE_NAME: transcripter_bot
 
     outputs:
       image: ${{ steps.define_env.outputs.image }}
